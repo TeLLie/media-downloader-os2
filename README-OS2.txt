@@ -133,6 +133,8 @@ development, you can do so in one of the following ways:
 Compiled now with Qt v5.15.2
 
 How to install:
+
+If you get error that it cannot download yt-dlp then you have to set in ?:\Home\.local\share\media-downloader\settings\settings.ini to NetworkTimeOutInSeconds=300
 REQUIREMENTS
 
 PYTHON3
