@@ -127,8 +127,8 @@ endif()
 if(OS2)
 set_target_properties(media-downloader PROPERTIES
  OS2_DEF_VENDOR "TeLLie OS2 forever"
- OS2_DEF_PATCH "${media-downloaderVERSION_PATCH}"
- OS2_DEF_VERSION "${MEDIA-DOWNLOADERVERSION}"
+ OS2_DEF_PATCH "${media-downloader_VERSION_PATCH}"
+ OS2_DEF_VERSION "${MEDIA-DOWNLOADER_VERSION}"
  OS2_DEF_EXEType "WINDOWAPI")
 endif()
 
