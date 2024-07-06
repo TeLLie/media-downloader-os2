@@ -236,10 +236,6 @@
         <translation></translation>
     </message>
     <message>
-        <source>Scale Factor(Need A Restart)</source>
-        <translation>Schaalfactor (herstart nodig)</translation>
-    </message>
-    <message>
         <source>Show Tray Icon</source>
         <translation>Toon systeemvakpictogram</translation>
     </message>
@@ -435,10 +431,6 @@ Exampe 2: ${gateway}:8080</source>
     <message>
         <source>2. Go To &quot;General Options&quot; Sub Tab.</source>
         <translation>2. Ga naar het subtabblad &quot;Algemene opties&quot;.</translation>
-    </message>
-    <message>
-        <source>Author</source>
-        <translation>Auteur</translation>
     </message>
     <message>
         <source>Japanese (Japan)</source>
@@ -916,6 +908,34 @@ Exampe 2: ${gateway}:8080</source>
         <source>Arabic</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Best Available Audio Only+Thumbnail</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Youtube</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Autoupdate Disabled For %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Newest Version Is %1, AutoUpdate Disabled</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Author: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Like Count: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Korean (Korea)</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>batchdownloader</name>
@@ -975,6 +995,18 @@ Exampe 2: ${gateway}:8080</source>
         <source>Download Media Part</source>
         <translation>Download media onderdeel</translation>
     </message>
+    <message>
+        <source>Sort By Date Ascending</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Sort By Date Descending</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Sort By Likes</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>configure</name>
@@ -1005,6 +1037,10 @@ Exampe 2: ${gateway}:8080</source>
     <message>
         <source>Copy</source>
         <translation>Kopieer</translation>
+    </message>
+    <message>
+        <source>Edit</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

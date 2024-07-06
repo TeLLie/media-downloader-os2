@@ -336,6 +336,11 @@ public:
 	{
 		QObject::connect( &m_table,m,std::move( c ) ) ;
 	}
+	template< typename MemberFunction,typename Obj,typename ObjMemberFunction >
+	void connect( MemberFunction m,Obj obj,ObjMemberFunction objm )
+	{
+		QObject::connect( &m_table,m,obj,objm ) ;
+	}
 	template< typename Function >
 	void each( Function function )
 	{
@@ -380,7 +385,7 @@ public:
 	{
 		tableWidget::setTableWidget( m_table,opts ) ;
 	}
-	int rowCount()
+	int rowCount() const
 	{
 		return m_table.rowCount() ;
 	}
@@ -457,7 +462,7 @@ public:
 	{
 		return m_table ;
 	}
-	const Stuff& stuffAt( int s )
+	const Stuff& stuffAt( int s ) const
 	{
 		return m_stuff[ static_cast< size_t >( s ) ] ;
 	}
@@ -569,6 +574,13 @@ public:
 			opts.clear() ;
 		}else{
 			opts.setText( optionsList.join( "+" ) ) ;
+		}
+	}
+	void selectRow( int row )
+	{
+		if( m_table.rowCount() > 0 ){
+
+			m_table.setCurrentCell( row,m_table.columnCount() - 1 ) ;
 		}
 	}
 	void selectLast()
