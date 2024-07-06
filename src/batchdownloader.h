@@ -211,12 +211,17 @@ public:
 	void showComments( const engines::engine&,const QString& ) ;
 	void clipboardData( const QString& ) ;
 	void textAlignmentChanged( Qt::LayoutDirection ) ;
-private slots:
-	void addItemUiSlot( ItemEntry ) ;
-	void networkData( utility::networkReply ) ;
+private
+slots:
 	void addTextToUi( const QByteArray&,int ) ;
-	void reportFinishedStatus( const reportFinished& ) ;
+signals:
+	void reportFStatus( const reportFinished&,const QStringList& ) ;
+	void addItemUiSignal( ItemEntry ) ;
+	void addTextToUiSignal( const QByteArray&,int ) ;
 private:
+	void networkData( const utility::networkReply& ) ;
+	void addItemUiSlot( ItemEntry ) ;
+	void reportFinishedStatus( const reportFinished&,const QStringList& ) ;
 	enum class listType{ COMMENTS,SUBTITLES,MEDIA_OPTIONS } ;
 	void setDefaultEngineAndOptions( Items::entry& ) ;
 	void showList( batchdownloader::listType,const engines::engine&,const QString&,int ) ;
@@ -226,6 +231,7 @@ private:
 	void showComments( const QByteArray& ) ;
 	void showSubtitles( const QByteArray& ) ;
 	void saveSubtitles() ;
+	void sortComments() ;
 	bool saveSubtitles( const QString& url,const QString& ext,const QString& title ) ;
 	void normalizeFilePath( QString& ) ;
 	void setVisibleMediaSectionCut( bool ) ;
@@ -348,6 +354,10 @@ private:
 		{
 			return m_localLogger.toLine() ;
 		}
+		const QStringList& fileNames() const
+		{
+			return m_localLogger.fileNames() ;
+		}
 	private:
 		Logger::Data m_localLogger ;
 		Logger& m_logger ;
@@ -403,6 +413,10 @@ private:
 			data.replace( "[media-downloader] Download Completed Successfully","" ) ;
 
 			return data ;
+		}
+		const QStringList& fileNames() const
+		{
+			return m_logger->fileNames() ;
 		}
 		void logError( const QByteArray& data )
 		{

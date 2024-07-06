@@ -14,7 +14,7 @@ set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-set( PGR_VERSION "4.7.0" )
+set( PGR_VERSION "4.8.0" )
 set( COPYRIGHT_YEARS "2021-2024" )
 
 INCLUDE(GNUInstallDirs)
@@ -31,11 +31,24 @@ endif()
 option(BUILD_WITH_QT6 "Build with Qt 6" OFF)
 
 if(BUILD_WITH_QT6)
-    find_package(Qt6 COMPONENTS Core Widgets Network REQUIRED)
+    find_package(Qt6 COMPONENTS Core Widgets Network REQUIRED )
     message("-- Building With Qt6")
 else()
-    find_package(Qt5 COMPONENTS Core Widgets Network REQUIRED)
-    message("-- Building With Qt5")
+    find_package(Qt5 COMPONENTS Core QUIET)
+    if(Qt5_FOUND)
+	message("-- Building With Qt5")
+	set(BUILD_WITH_QT6 OFF)
+	find_package(Qt5 COMPONENTS Core Widgets Network REQUIRED)
+    else()
+	find_package(Qt6 COMPONENTS Core QUIET)
+	if(Qt6_FOUND)
+	    message("-- Building With Qt6")
+	    set(BUILD_WITH_QT6 ON)
+	    find_package(Qt6 COMPONENTS Core Widgets Network REQUIRED)
+	else()
+	    message( FATAL_ERROR "-- Failed to find Qt5 or Qt6")
+	endif()
+    endif()
 endif()
 
 include_directories(${PROJECT_BINARY_DIR})
@@ -52,26 +65,15 @@ set(UI_FILES
     src/mainwindow.ui
     src/logwindow.ui)
 
-if(Qt5Core_VERSION VERSION_LESS 5.4.0)
-    set(MOC_FILES
-        src/mainwindow.h
-        src/logwindow.h
-        src/basicdownloader.h
-        src/batchdownloader.h
-        src/configure.h
-        src/library.h
-        src/playlistdownloader.h
-        src/utils/single_instance.hpp)
-else()
-    set(MOC_FILES
-        src/mainwindow.h
-        src/logwindow.h
-        src/basicdownloader.h
-        src/batchdownloader.h
-        src/configure.h
-        src/library.h
-        src/playlistdownloader.h)
-endif()
+set(MOC_FILES
+    src/mainwindow.h
+    src/logwindow.h
+    src/basicdownloader.h
+    src/batchdownloader.h
+    src/configure.h
+    src/library.h
+    src/playlistdownloader.h
+    src/utils/single_instance.hpp)
 
 set(SRC
     src/mainwindow.cpp

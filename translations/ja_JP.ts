@@ -172,10 +172,6 @@
         <translation>デフォルトに戻す</translation>
     </message>
     <message>
-        <source>Scale Factor(Need A Restart)</source>
-        <translation>表示倍率 (再起動が必要)</translation>
-    </message>
-    <message>
         <source>Preset Options</source>
         <translation>プリセット設定</translation>
     </message>
@@ -395,10 +391,6 @@ Exampe 2: ${gateway}:8080</source>
     <message>
         <source>Save List To File</source>
         <translation>ファイルにリストを保存</translation>
-    </message>
-    <message>
-        <source>Author</source>
-        <translation>作者</translation>
     </message>
     <message>
         <source>Date</source>
@@ -916,6 +908,34 @@ Exampe 2: ${gateway}:8080</source>
         <source>Arabic</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Best Available Audio Only+Thumbnail</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Youtube</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Autoupdate Disabled For %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Newest Version Is %1, AutoUpdate Disabled</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Author: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Like Count: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Korean (Korea)</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>batchdownloader</name>
@@ -975,6 +995,18 @@ Exampe 2: ${gateway}:8080</source>
         <source>Downloading subtitles</source>
         <translation>字幕をダウンロード中</translation>
     </message>
+    <message>
+        <source>Sort By Date Ascending</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Sort By Date Descending</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Sort By Likes</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>configure</name>
@@ -1005,6 +1037,10 @@ Exampe 2: ${gateway}:8080</source>
     <message>
         <source>Set Download Folder</source>
         <translation>ダウンロードフォルダをセット</translation>
+    </message>
+    <message>
+        <source>Edit</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

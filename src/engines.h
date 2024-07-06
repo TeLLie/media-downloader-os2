@@ -448,7 +448,7 @@ public:
 			{
 			public:
 				filter( const engines::engine& engine,int ) ;
-				virtual const QByteArray& operator()( const Logger::Data& e ) ;
+				virtual const QByteArray& operator()( Logger::Data& e ) ;
 				virtual ~filter() ;
 				const engines::engine& engine() const ;
 			private:
@@ -466,7 +466,7 @@ public:
 					m_filter( std::make_unique< typename Type::type >( std::forward< Args >( args ) ... ) )
 				{
 				}
-				const QByteArray& operator()( const Logger::Data& e )
+				const QByteArray& operator()( Logger::Data& e )
 				{
 					return ( *m_filter )( e ) ;
 				}
@@ -692,7 +692,7 @@ public:
 
 			virtual QString deleteEngineBinFolder( const QString& ) ;
 
-			virtual void runCommandOnDownloadedFile( const QString&,const QString& ) ;
+			virtual void runCommandOnDownloadedFile( const QStringList& ) ;
 
 			virtual QString commandString( const engines::engine::exeArgs::cmd& ) ;
 
@@ -724,7 +724,7 @@ public:
 
 			virtual bool foundNetworkUrl( const QString& ) ;
 
-			virtual void renameArchiveFolder( const QString& ) ;
+			virtual void renameArchiveFolder( const QString&,const QString& ) ;
 
 			QString updateTextOnCompleteDownlod( const QString& uiText,
 							     const QString& downloadingOptions,
@@ -951,17 +951,17 @@ public:
 		{
 			m_engine->processData( outPut,data,id,readableJson ) ;
 		}
-		void renameArchiveFolder( const QString& e ) const
+		void renameArchiveFolder( const QString& s,const QString& e ) const
 		{
-			return m_engine->renameArchiveFolder( e ) ;
+			return m_engine->renameArchiveFolder( s,e ) ;
 		}
 		QString commandString( const engines::engine::exeArgs::cmd& cmd ) const
 		{
 			return m_engine->commandString( cmd ) ;
 		}
-		void runCommandOnDownloadedFile( const QString& e,const QString& s ) const
+		void runCommandOnDownloadedFile( const QStringList& fileNames ) const
 		{
-			m_engine->runCommandOnDownloadedFile( e,s ) ;
+			m_engine->runCommandOnDownloadedFile( fileNames ) ;
 		}
 		const QStringList& defaultDownLoadCmdOptions() const
 		{
@@ -1142,6 +1142,10 @@ public:
 			QFileInfo m( m_exePath.realExe() ) ;
 			return m.exists() && m.isFile() ;
 		}
+		bool autoUpdate() const
+		{
+			return m_autoUpdate ;
+		}
 		bool mainEngine() const
 		{
 			return m_mainEngine ;
@@ -1188,6 +1192,7 @@ public:
 		int m_line ;
 		int m_position ;
 		bool m_valid ;
+		bool m_autoUpdate ;
 		bool m_canDownloadPlaylist ;
 		bool m_likeYoutubeDl ;
 		bool m_mainEngine ;

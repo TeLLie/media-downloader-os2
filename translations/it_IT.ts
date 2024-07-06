@@ -212,10 +212,6 @@
         <translation>Imposta quale URL deve essere gestita da quale motore</translation>
     </message>
     <message>
-        <source>Scale Factor(Need A Restart)</source>
-        <translation>Fattore di scala (richiede riavvio)</translation>
-    </message>
-    <message>
         <source>Paste Clipboard Url</source>
         <translation>Inolla URL dagli Appunti</translation>
     </message>
@@ -441,10 +437,6 @@ Esempio 2: ${gateway}:8080</translation>
     <message>
         <source>2. Go To &quot;General Options&quot; Sub Tab.</source>
         <translation>2. Vai alla scheda &quot;Opzioni generali&quot;.</translation>
-    </message>
-    <message>
-        <source>Author</source>
-        <translation>Autore</translation>
     </message>
     <message>
         <source>Japanese (Japan)</source>
@@ -920,6 +912,34 @@ Per maggiori dettagli vedi la GNU General Public License .</translation>
         <source>Arabic</source>
         <translation>Arabo</translation>
     </message>
+    <message>
+        <source>Best Available Audio Only+Thumbnail</source>
+        <translation>Solo miglior audio disponibile+miniatura</translation>
+    </message>
+    <message>
+        <source>Youtube</source>
+        <translation>Youtube</translation>
+    </message>
+    <message>
+        <source>Autoupdate Disabled For %1</source>
+        <translation>Aggiornamento automatico disabilitato per %1</translation>
+    </message>
+    <message>
+        <source>Newest Version Is %1, AutoUpdate Disabled</source>
+        <translation>La versione più recente è %1, aggiornamento automatico disabilitato</translation>
+    </message>
+    <message>
+        <source>Author: %1</source>
+        <translation>Autore: %1</translation>
+    </message>
+    <message>
+        <source>Like Count: %1</source>
+        <translation>N. mi piace: %1</translation>
+    </message>
+    <message>
+        <source>Korean (Korea)</source>
+        <translation>Coreano (Corea)</translation>
+    </message>
 </context>
 <context>
     <name>batchdownloader</name>
@@ -979,6 +999,18 @@ Per maggiori dettagli vedi la GNU General Public License .</translation>
         <source>Download Media Part</source>
         <translation>Scarica parte multimediale</translation>
     </message>
+    <message>
+        <source>Sort By Date Ascending</source>
+        <translation>Ordina per data crescente</translation>
+    </message>
+    <message>
+        <source>Sort By Date Descending</source>
+        <translation>Ordina per data decrescente</translation>
+    </message>
+    <message>
+        <source>Sort By Likes</source>
+        <translation>Ordina per n. Mi piace</translation>
+    </message>
 </context>
 <context>
     <name>configure</name>
@@ -1009,6 +1041,10 @@ Per maggiori dettagli vedi la GNU General Public License .</translation>
     <message>
         <source>Copy</source>
         <translation>Copia</translation>
+    </message>
+    <message>
+        <source>Edit</source>
+        <translation>Modifica</translation>
     </message>
 </context>
 <context>

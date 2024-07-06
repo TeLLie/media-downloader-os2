@@ -73,13 +73,13 @@ private:
 	std::vector< directoryEntries::entry > m_files ;
 	std::vector< directoryEntries::wrapper > m_joined ;
 public:
+	enum class ICON{ FILE,FOLDER } ;
 	directoryEntries move()
 	{
 		return std::move( *this ) ;
 	}
 	bool valid( const char * ) ;
 	bool valid( const wchar_t * ) ;
-	bool valid( const QString& ) ;
 
 	void clear()
 	{
@@ -167,9 +167,14 @@ public:
 		{
 			return m_entries->data()[ m_position ]->path() ;
 		}
-		bool isFolder() const
+		directoryEntries::ICON icon() const
 		{
-			return m_entries->data()[ m_position ]->isFolder() ;
+			if( m_entries->data()[ m_position ]->isFolder() ){
+
+				return directoryEntries::ICON::FOLDER ;
+			}else{
+				return directoryEntries::ICON::FILE ;
+			}
 		}
 		iter next() const
 		{

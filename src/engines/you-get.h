@@ -34,7 +34,7 @@ public:
 	public:
 		you_getFilter( settings&,const engines::engine&,int ) ;
 
-		const QByteArray& operator()( const Logger::Data& e ) override ;
+		const QByteArray& operator()( Logger::Data& e ) override ;
 
 		~you_getFilter() override ;
 	private:
@@ -50,7 +50,7 @@ public:
 
 	void setProxySetting( QStringList&,const QString& ) override ;
 
-	void renameArchiveFolder( const QString& ) override ;
+	void renameArchiveFolder( const QString&,const QString& ) override ;
 
 	std::vector< engines::engine::baseEngine::mediaInfo > mediaProperties( Logger&,const QByteArray& ) override ;
 

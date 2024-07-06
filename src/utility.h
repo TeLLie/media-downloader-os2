@@ -1146,7 +1146,7 @@ namespace utility
 				m_engine.processData( e,d,id,s ) ;
 			} ) ;
 
-			m_events.done( state.move() ) ;
+			m_events.done( state.move(),m_logger.fileNames() ) ;
 
 			m_logger.registerDone() ;
 		}
@@ -1165,7 +1165,7 @@ namespace utility
 					m_engine.processData( e,d,id,s ) ;
 				} ) ;
 
-				m_events.done( state ) ;
+				m_events.done( state,QStringList() ) ;
 			}
 		}
 		void withData( QProcess::ProcessChannel channel,const QByteArray& data )
@@ -1481,6 +1481,30 @@ namespace utility
 		bool m_showFirst = false ;
 	} ;
 
+	class networkReply ;
+
+	class networkReplyInvoker : public QObject
+	{
+		Q_OBJECT
+	public:
+		template< typename Object,typename Member >
+		networkReplyInvoker( Object obj,Member member,const networkReply& nr )
+		{
+			connect( this,
+				 &networkReplyInvoker::send,
+				 obj,
+				 member,
+				 Qt::QueuedConnection ) ;
+
+			emit send( nr ) ;
+
+			this->deleteLater() ;
+		}
+	private:
+	signals:
+		void send( const networkReply& ) ;
+	} ;
+
 	class networkReply
 	{
 	public:
@@ -1491,8 +1515,9 @@ namespace utility
 		{
 			this->getData( ctx,reply ) ;
 		}
-		networkReply( QObject * obj,
-			      const char * member,
+		template< typename Object,typename Member >
+		networkReply( Object obj,
+			      Member member,
 			      tableWidget * t,
 			      int id,
 			      utility::MediaEntry m ) :
@@ -1500,10 +1525,11 @@ namespace utility
 			m_mediaEntry( m.move() ),
 			m_table( t )
 		{
-			this->invoke( obj,member ) ;
+			new utility::networkReplyInvoker( obj,member,*this ) ;
 		}
-		networkReply( QObject * obj,
-			      const char * member,
+		template< typename Object,typename Member >
+		networkReply( Object obj,
+			      Member member,
 			      const Context& ctx,
 			      const utils::network::reply& reply,
 			      tableWidget * t,
@@ -1514,7 +1540,8 @@ namespace utility
 			m_table( t )
 		{
 			this->getData( ctx,reply ) ;
-			this->invoke( obj,member ) ;
+
+			new utility::networkReplyInvoker( obj,member,*this ) ;
 		}
 		const QByteArray& data() const
 		{
@@ -1541,7 +1568,6 @@ namespace utility
 			return *m_table ;
 		}
 	private:
-		void invoke( QObject *,const char * ) ;
 		void getData( const Context& ctx,const utils::network::reply& ) ;
 		QByteArray m_data ;
 		int m_id ;
@@ -1553,7 +1579,8 @@ namespace utility
 	void updateFinishedState( const engines::engine& engine,
 				  settings& s,
 				  tableWidget& table,
-				  const FinishedState& f )
+				  const FinishedState& f,
+				  const QStringList& fileNames )
 	{
 		const auto& index = f.index() ;
 		const auto& es = f.exitState() ;
@@ -1572,7 +1599,7 @@ namespace utility
 
 			if( es.success() ){
 
-				engine.runCommandOnDownloadedFile( a,backUpUrl ) ;
+				engine.runCommandOnDownloadedFile( fileNames ) ;
 			}
 
 			if( f.done() ){
@@ -1581,7 +1608,7 @@ namespace utility
 
 				if( !a.isEmpty() ){
 
-					auto args = util::split( a,' ',true ) ;
+					auto args = util::splitPreserveQuotes( a ) ;
 
 					auto exe = args.takeAt( 0 ) ;
 

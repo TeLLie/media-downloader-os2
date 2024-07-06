@@ -188,10 +188,6 @@
         <translation>Establecer Predeterminados</translation>
     </message>
     <message>
-        <source>Scale Factor(Need A Restart)</source>
-        <translation>Factor de Escala (Necesita Reiniciar)</translation>
-    </message>
-    <message>
         <source>Preset Options</source>
         <translation>Opciones Predeterminadas</translation>
     </message>
@@ -397,10 +393,6 @@ Ejemplo 2: ${gateway}:8080</translation>
     <message>
         <source>Save List To File</source>
         <translation>Guardar Lista en Archivo</translation>
-    </message>
-    <message>
-        <source>Author</source>
-        <translation>Autor</translation>
     </message>
     <message>
         <source>Date</source>
@@ -918,6 +910,34 @@ Ejemplo 2: ${gateway}:8080</translation>
         <source>Arabic</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Best Available Audio Only+Thumbnail</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Youtube</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Autoupdate Disabled For %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Newest Version Is %1, AutoUpdate Disabled</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Author: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Like Count: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Korean (Korea)</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>batchdownloader</name>
@@ -977,6 +997,18 @@ Ejemplo 2: ${gateway}:8080</translation>
         <source>Downloading subtitles</source>
         <translation>Descargando subtítulos</translation>
     </message>
+    <message>
+        <source>Sort By Date Ascending</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Sort By Date Descending</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Sort By Likes</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>configure</name>
@@ -1007,6 +1039,10 @@ Ejemplo 2: ${gateway}:8080</translation>
     <message>
         <source>Set Download Folder</source>
         <translation>Establecer Carpeta para Descargas</translation>
+    </message>
+    <message>
+        <source>Edit</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

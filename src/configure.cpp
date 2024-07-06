@@ -50,9 +50,9 @@ configure::configure( const Context& ctx ) :
 	m_ui.pbOpenBinFolder->setIcon( QIcon( ":/executable" ) ) ;
 	m_ui.pbConfigureDownloadPath->setIcon( QIcon( ":/folder" ) ) ;
 
-	m_ui.tableWidgetConfigureUrl->setColumnWidth( 0,180 ) ;
+	this->setVisibilityEditConfigFeature( false ) ;
 
-	m_ui.lineEditConfigureScaleFactor->setEnabled( m_settings.enabledHighDpiScaling() ) ;
+	m_ui.tableWidgetConfigureUrl->setColumnWidth( 0,180 ) ;
 
 	m_ui.tabWidgetConfigure->setCurrentIndex( 0 ) ;
 
@@ -76,6 +76,33 @@ configure::configure( const Context& ctx ) :
 	m_tableUrlToDefaultEngine.setCurrentItemChanged( 0 ) ;
 
 	m_tableDefaultDownloadOptions.setCurrentItemChanged( 0 ) ;
+
+	connect( m_ui.pbConfigureSaveEditOption,&QPushButton::clicked,[ this ](){
+
+		auto row = m_tableDefaultDownloadOptions.currentRow() ;
+
+		if( row != -1 ){
+
+			auto Old = m_tableDefaultDownloadOptions.item( row,1 ).text() ;
+
+			auto New = m_ui.textEditConfigureEditOption->toPlainText() ;
+
+			auto mm = m_ui.cbConfigureEngines->currentText() ;
+
+			m_downloadEngineDefaultOptions.replace( mm,Old,New ) ;
+
+			const auto& s = m_ctx.Engines().getEngineByName( mm ) ;
+
+			this->populateOptionsTable( s.value(),row ) ;
+		}
+
+		this->setVisibilityEditConfigFeature( false ) ;
+	} ) ;
+
+	connect( m_ui.pbConfigureSaveEditOptionCancel,&QPushButton::clicked,[ this ](){
+
+		this->setVisibilityEditConfigFeature( false ) ;
+	} ) ;
 
 	connect( m_ui.pbOpenThemeFolder,&QPushButton::clicked,[ themesFolderPath ](){
 
@@ -177,7 +204,7 @@ configure::configure( const Context& ctx ) :
 
 					m_downloadEngineDefaultOptions.setAsDefault( obj ) ;
 
-					this->populateOptionsTable( s.value() ) ;
+					this->populateOptionsTable( s.value(),m ) ;
 				}
 			}
 		} ) ;
@@ -221,6 +248,20 @@ configure::configure( const Context& ctx ) :
 			}
 		} ) ;
 
+		connect( m.addAction( tr( "Edit" ) ),&QAction::triggered,[ this ](){
+
+			auto row = m_tableDefaultDownloadOptions.currentRow() ;
+
+			if( row != -1 ){
+
+				auto m = m_tableDefaultDownloadOptions.item( row,1 ).text() ;
+
+				m_ui.textEditConfigureEditOption->setText( m ) ;
+
+				this->setVisibilityEditConfigFeature( true ) ;
+			}
+		} ) ;
+
 		m.exec( QCursor::pos() ) ;
 	} ) ;
 
@@ -236,9 +277,14 @@ configure::configure( const Context& ctx ) :
 
 			if( s ){
 
-				auto obj = m_downloadEngineDefaultOptions.addOpt( "no",s->name(),m ) ;
+				auto obj = m_downloadEngineDefaultOptions.addOpt( "yes",s->name(),m ) ;
 
-				m_tableDefaultDownloadOptions.add( std::move( obj ),"no",m ) ;
+				for( int i = 0 ; i < m_tableDefaultDownloadOptions.rowCount() ; i++ ){
+
+					m_tableDefaultDownloadOptions.item( i,0 ).setText( "no" ) ;
+				}
+
+				m_tableDefaultDownloadOptions.add( std::move( obj ),"yes",m ) ;
 
 				m_tableDefaultDownloadOptions.selectLast() ;
 
@@ -564,8 +610,6 @@ configure::configure( const Context& ctx ) :
 		}
 	} ) ;
 
-	m_ui.lineEditConfigureScaleFactor->setText( m_settings.highDpiScalingFactor() ) ;
-
 	m_ui.lineEditConfigureDownloadPath->setText( m_settings.downloadFolder() ) ;
 
 	m_ui.cbAutoHideDownloadCompleted->setChecked( m_settings.autoHideDownloadWhenCompleted() ) ;
@@ -739,7 +783,7 @@ void configure::tabEntered()
 	}
 }
 
-void configure::populateOptionsTable( const engines::engine& s )
+void configure::populateOptionsTable( const engines::engine& s,int selectRow )
 {
 	m_tableDefaultDownloadOptions.clear() ;
 
@@ -769,7 +813,12 @@ void configure::populateOptionsTable( const engines::engine& s )
 		}
 	}
 
-	m_tableDefaultDownloadOptions.selectLast() ;
+	if( selectRow == -1 ){
+
+		m_tableDefaultDownloadOptions.selectLast() ;
+	}else{
+		m_tableDefaultDownloadOptions.selectRow( selectRow ) ;
+	}
 }
 
 void configure::tabExited()
@@ -840,7 +889,6 @@ void configure::saveOptions()
 	m_ctx.TabManager().batchDownloader().setShowMetaData( m ) ;
 
 	m_settings.setShowMetaDataInBatchDownloader( m ) ;
-	m_settings.setHighDpiScalingFactor( m_ui.lineEditConfigureScaleFactor->text() ) ;
 	m_settings.setDownloadFolder( m_ui.lineEditConfigureDownloadPath->text() ) ;
 	m_settings.setAutoSavePlaylistOnExit( m_ui.cbAutoSaveNotDownloadedMedia->isChecked() ) ;
 	m_settings.setTextEncoding( m_ui.lineEditConfigureTextEncoding->text() ) ;
@@ -936,8 +984,8 @@ void configure::setEngineOptions( const QString& e,engineOptions tab )
 				if( engineName.isEmpty() || engineName == e.engine ){
 
 					m_tableUrlToDefaultEngine.add( std::move( obj ),
-									      e.url,
-									      e.downloadOptions ) ;
+								       e.url,
+								       e.downloadOptions ) ;
 				}
 
 				return false ;
@@ -1095,7 +1143,6 @@ void configure::enableAll()
 	m_ui.lineEditConfigureDownloadPath->setEnabled( true ) ;
 	m_ui.pbConfigureDownloadPath->setEnabled( true ) ;
 	m_ui.pbConfigureSetPresetDefaults->setEnabled( true ) ;
-	m_ui.labelConfigureScaleFactor->setEnabled( true ) ;
 	m_ui.labelConfigureDownloadPath->setEnabled( true ) ;
 	m_ui.pbConfigureQuit->setEnabled( true ) ;
 	m_ui.pbConfigureAddAPlugin->setEnabled( true ) ;
@@ -1108,11 +1155,6 @@ void configure::enableAll()
 	m_ui.cbAutoHideDownloadCompleted->setEnabled( true ) ;
 	m_ui.labelActionsAtStartup->setEnabled( true ) ;
 	m_ui.comboBoxActionsWhenStarting->setEnabled( true ) ;
-
-	if( m_settings.enabledHighDpiScaling() ){
-
-		m_ui.lineEditConfigureScaleFactor->setEnabled( true ) ;
-	}
 }
 
 void configure::textAlignmentChanged( Qt::LayoutDirection z )
@@ -1129,12 +1171,11 @@ void configure::textAlignmentChanged( Qt::LayoutDirection z )
 	auto j = m_ui.labelConfigureTheme ;
 	auto k = m_ui.labelMaximumConcurrentDownloads ;
 	auto l = m_ui.labelConfigureLanguage ;
-	auto m = m_ui.labelConfigureScaleFactor ;
-	auto n = m_ui.labelConfigureDownloadPath ;
-	auto o = m_ui.labelConfugureWebSite ;
-	auto p = m_ui.labelActionsAtStartup ;
+	auto m = m_ui.labelConfigureDownloadPath ;
+	auto n = m_ui.labelConfugureWebSite ;
+	auto o = m_ui.labelActionsAtStartup ;
 
-	utility::alignText( z,a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p ) ;
+	utility::alignText( z,a,b,c,d,e,f,g,h,i,j,k,l,m,n,o ) ;
 }
 
 void configure::disableAll()
@@ -1189,12 +1230,10 @@ void configure::disableAll()
 	m_ui.cbConfigureLanguage->setEnabled( false ) ;
 	m_ui.labelConfigureLanguage->setEnabled( false ) ;
 	m_ui.pbConfigureQuit->setEnabled( false ) ;
-	m_ui.lineEditConfigureScaleFactor->setEnabled( false ) ;
 	m_ui.lineEditConfigureDownloadPath->setEnabled( false ) ;
 	m_ui.lineEditConfigureDownloadPath->setEnabled( false ) ;
 	m_ui.pbConfigureDownloadPath->setEnabled( false ) ;
 	m_ui.pbConfigureSetPresetDefaults->setEnabled( false ) ;
-	m_ui.labelConfigureScaleFactor->setEnabled( false ) ;
 	m_ui.labelConfigureDownloadPath->setEnabled( false ) ;
 	m_ui.cbConfigureShowMetaDataInBatchDownloader->setEnabled( false ) ;
 	m_ui.lineEditConfigureWebsite->setEnabled( false ) ;
@@ -1353,13 +1392,18 @@ QByteArray configure::presetOptions::defaultData()
 	"website": "Youtube"
     },
     {
-	"options": "-f bestaudio -x --embed-thumbnail --audio-format mp3",
+	"options": "-f bestaudio --extract-audio --audio-quality 0 --audio-format mp3 --embed-thumbnail",
 	"uiName": "Best Available Audio Only(MP3)",
 	"website": "Youtube"
     },
     {
-	"options": "-f bestaudio -x --embed-thumbnail",
+	"options": "-f bestaudio",
 	"uiName": "Best Available Audio Only",
+	"website": "Youtube"
+    },
+    {
+	"options": "-f bestaudio --extract-audio --audio-quality 0 --embed-thumbnail",
+	"uiName": "Best Available Audio Only+Thumbnail",
 	"website": "Youtube"
     },
     {
@@ -1368,12 +1412,12 @@ QByteArray configure::presetOptions::defaultData()
 	"website": "Other Websites"
     },
     {
-	"options": "-f bestaudio/worst -x --embed-thumbnail --audio-format mp3",
+	"options": "-f bestaudio/worst --embed-thumbnail --extract-audio --audio-quality 0 --audio-format mp3",
 	"uiName": "Extract Audio As MP3",
 	"website": "Other Websites"
     },
     {
-	"options": "-f bestaudio/worst -x --embed-thumbnail",
+	"options": "-f bestaudio/worst --extract-audio --audio-quality 0 --embed-thumbnail",
 	"uiName": "Extract Audio",
 	"website": "Other Websites"
     }
@@ -1391,7 +1435,7 @@ configure::presetEntry::presetEntry( const QString& ui,const QString& op,const Q
 
 		uiNameTranslated = QObject::tr( "Extract Audio As MP3" ) ;
 
-	}if( uiName == "Best Available Audio Only" ){
+	}else if( uiName == "Best Available Audio Only" ){
 
 		uiNameTranslated = QObject::tr( "Best Available Audio Only" ) ;
 
@@ -1408,13 +1452,21 @@ configure::presetEntry::presetEntry( const QString& ui,const QString& op,const Q
 		auto m = QObject::tr( "Best Audio With Video Resolution Of %1" ) ;
 
 		uiNameTranslated = m.arg( uiName.mid( uiName.lastIndexOf( ' ' ) + 1 ) ) ;
+
+	}else if( uiName == "Best Available Audio Only+Thumbnail" ){
+
+		uiNameTranslated = QObject::tr( "Best Available Audio Only+Thumbnail" ) ;
 	}else{
 		uiNameTranslated = uiName ;
 	}
 
-	if( websiteTranslated == "Other Websites" ){
+	if( website == "Other Websites" ){
 
 		websiteTranslated = QObject::tr( "Other Websites" ) ;
+
+	}else if( website == "Youtube" ){
+
+		websiteTranslated = QObject::tr( "Youtube" ) ;
 	}
 }
 
@@ -1445,6 +1497,14 @@ void configure::downloadDefaultOptions::save()
 	f.write( QJsonDocument( m_array ).toJson( QJsonDocument::Indented ) ) ;
 }
 
+void configure::setVisibilityEditConfigFeature( bool e )
+{
+	m_ui.pbConfigureSaveEditOption->setVisible( e ) ;
+	m_ui.textEditConfigureEditOption->setVisible( e ) ;
+	m_ui.labelEditConfigOptions->setVisible( e ) ;
+	m_ui.pbConfigureSaveEditOptionCancel->setVisible( e ) ;
+}
+
 bool configure::downloadDefaultOptions::isEmpty( const QString& m )
 {
 	for( const auto& it : util::asConst( m_array ) ){
@@ -1460,20 +1520,39 @@ bool configure::downloadDefaultOptions::isEmpty( const QString& m )
 	return true ;
 }
 
+void configure::downloadDefaultOptions::replace( const QString& engineName,
+						 const QString& oldOptions,
+						 const QString& newOptions )
+{
+	for( int i = 0 ; i < m_array.size() ; i++ ){
+
+		auto obj = m_array[ i ].toObject() ;
+
+		auto e = obj.value( "engineName" ).toString() ;
+		auto o = obj.value( "options" ).toString() ;
+
+		if( e == engineName && o == oldOptions ){
+
+			obj.insert( "options",newOptions ) ;
+
+			m_array[ i ] = std::move( obj ) ;
+		}
+	}
+}
+
 QJsonObject configure::downloadDefaultOptions::addOpt( const QString& inUse,
 						       const QString& engineName,
 						       const QString& options )
 {
-	for( const auto& it : util::asConst( m_array ) ){
+	if( inUse == "yes" ){
 
-		auto obj = it.toObject() ;
+		for( int i = 0 ; i < m_array.size() ; i++ ){
 
-		auto a = obj.value( "options" ).toString() ;
-		auto b = obj.value( "engineName" ).toString() ;
+			auto obj = m_array[ i ].toObject() ;
 
-		if( a == options && b == engineName ){
+			obj.insert( "default","no" ) ;
 
-			return obj ;
+			m_array[ i ] = std::move( obj ) ;
 		}
 	}
 
@@ -1549,7 +1628,7 @@ void configure::downloadDefaultOptions::remove( const QJsonObject& e )
 
 			obj.insert( "default","yes" ) ;
 
-			m_array[ i ] = obj ;
+			m_array[ i ] = std::move( obj ) ;
 
 			break ;
 		}
@@ -1575,33 +1654,32 @@ void configure::downloadDefaultOptions::removeAll( const QString& e )
 	}() ){} ;
 }
 
-QJsonObject configure::downloadDefaultOptions::setAsDefault( const QJsonObject& e )
+void configure::downloadDefaultOptions::setAsDefault( const QJsonObject& e )
 {
+	for( int i = 0 ; i < m_array.size() ; i++ ){
+
+		auto obj = m_array[ i ].toObject() ;
+		obj.insert( "default","no" ) ;
+		m_array[ i ] = std::move( obj ) ;
+	}
+
 	auto engineName = e.value( "engineName" ).toString() ;
 	auto options = e.value( "options" ).toString() ;
-
-	QJsonObject xbj ;
 
 	for( int i = 0 ; i < m_array.size() ; i++ ){
 
 		auto obj = m_array[ i ].toObject() ;
+
 		auto engine = obj.value( "engineName" ).toString() ;
 		auto opts = obj.value( "options" ).toString() ;
 
-		if( engine == engineName ){
+		if( engine == engineName && options == opts ){
 
-			if( options == opts ){
+			obj.insert( "default","yes" ) ;
 
-				xbj = obj ;
+			m_array[ i ] = std::move( obj ) ;
 
-				obj.insert( "default","yes" ) ;
-			}else{
-				obj.insert( "default","no" ) ;
-			}
-
-			m_array[ i ] = obj ;
+			break ;
 		}
 	}
-
-	return xbj ;
 }
