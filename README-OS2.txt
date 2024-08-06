@@ -5,7 +5,7 @@
 ****                All the money you send will go to the QT5 project                          ****
 ===================================================================================================
 
-Media-downloader v4.8.0   
+Media-downloader v4.9.0   
 
  CONTENTS OF THIS FILE
  =====================
@@ -32,7 +32,7 @@ Media-downloader v4.8.0
 1. INTRODUCTION
 ===============
 
-Welcome to media-downloader v4.8.0 port for OS/2 and Arcanoae.
+Welcome to media-downloader v4.9.0 port for OS/2 and Arcanoae.
 
 This project is a Qt/C++ based GUI frontend to CLI multiple CLI-based tools that deal with downloading online media.11
 
