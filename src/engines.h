@@ -700,8 +700,6 @@ public:
 
 			virtual void updateEnginePaths( const Context&,QString& filePath,QString& exeBinPath,QString& exeFolderPath ) ;
 
-			virtual bool likeYtdlp() ;
-
 			virtual void updateLocalOptions( QStringList& ) ;
 
 			virtual void setProxySetting( QStringList&,const QString& ) ;
@@ -709,6 +707,15 @@ public:
 			virtual QString setCredentials( QStringList&,QStringList & ) ;
 
 			virtual util::Json parsePlayListData( const QByteArray& ) ;
+
+			struct localFile
+			{
+				const QString& uiText ;
+				const QString& downloadFolder ;
+				const QStringList& fileNames ;
+			};
+
+			virtual void openLocalFile( const engines::engine::baseEngine::localFile& ) ;
 
 			struct onlineVersion
 			{
@@ -1041,6 +1048,10 @@ public:
 		{
 			return m_engine->horizontalHeaderLabels() ;
 		}
+		void openLocalFile( const engines::engine::baseEngine::localFile& s ) const
+		{
+			m_engine->openLocalFile( s ) ;
+		}
 		void updateOutPutChannel( QProcess::ProcessChannel& s ) const
 		{
 			m_engine->updateOutPutChannel( s ) ;
@@ -1119,7 +1130,7 @@ public:
 		}
 		bool canDownloadMediaPart() const
 		{
-			return this->name().contains( "yt-dlp" ) ;
+			return this->likeYtDlp() ;
 		}
 		bool valid() const
 		{
@@ -1133,9 +1144,9 @@ public:
 		{
 			return m_canDownloadPlaylist ;
 		}
-		bool likeYoutubeDl() const
+		bool likeYtDlp() const
 		{
-			return m_likeYoutubeDl ;
+			return m_likeYtDlp ;
 		}
 		bool backendExists() const
 		{
@@ -1194,13 +1205,13 @@ public:
 		bool m_valid ;
 		bool m_autoUpdate ;
 		bool m_canDownloadPlaylist ;
-		bool m_likeYoutubeDl ;
 		bool m_mainEngine ;
 		bool m_archiveContainsFolder = false ;
 		bool m_replaceOutputWithProgressReport ;
 		mutable bool m_broken = false ;
 		QString m_versionArgument ;
 		QString m_name ;
+		bool m_likeYtDlp ;
 		QString m_commandName ;
 		QString m_userName ;
 		QString m_password ;
@@ -1236,7 +1247,6 @@ public:
 	util::result_ref< const engines::engine& > getEngineByName( const QString& name ) const ;
 	const enginePaths& engineDirPaths() const ;
 	engines( Logger&,const engines::enginePaths&,settings&,int ) ;
-	void openUrls( tableWidget&,int row ) const ;
 	void openUrls( tableWidget&,int row,const engines::engine& ) const ;
 	void openUrls( const QString& path ) const ;
 	const QString& defaultEngineName() const ;

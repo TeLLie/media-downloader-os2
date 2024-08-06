@@ -644,17 +644,9 @@ namespace utility
 		{
 			return m_showLogWindow ;
 		}
-		bool showRowLogWindow() const
-		{
-			return m_showRawLogWindow ;
-		}
 		void setShowLogWindow()
 		{
 			m_showLogWindow = true ;
-		}
-		void setShowRawLogWindow()
-		{
-			m_showRawLogWindow = true ;
 		}
 		bool clear() const
 		{
@@ -668,7 +660,6 @@ namespace utility
 		bool m_noneAreRunning ;
 		bool m_finishedSuccess ;
 		bool m_showLogWindow = false ;
-		bool m_showRawLogWindow = false ;
 		bool m_clear = false ;
 	};
 
@@ -1584,6 +1575,8 @@ namespace utility
 	{
 		const auto& index = f.index() ;
 		const auto& es = f.exitState() ;
+
+		table.setFileNames( index,fileNames ) ;
 
 		table.setRunningState( f.setState(),index ) ;
 

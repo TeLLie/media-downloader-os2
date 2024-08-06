@@ -14,6 +14,5 @@ jobs:
         with:
           token: ${{ secrets.MD_GIT_PUBLISH }}
           repository: mhogomchungu/media-downloader-git
-          event-type: PublishRelease
-          client-payload: '{"ref": "${{ github.ref }}", "sha": "${{ github.sha }}"}'
+          event-type: PublishWindowsRelease
 
