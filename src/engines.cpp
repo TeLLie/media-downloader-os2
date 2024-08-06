@@ -211,49 +211,15 @@ void engines::setNetworkProxy( engines::proxySettings e,bool firstTime )
 	QNetworkProxy::setApplicationProxy( m_networkProxy.networkProxy() ) ;
 }
 
-static void _openUrls( tableWidget& table,int row,settings& settings,bool galleryDl )
+void engines::openUrls( tableWidget& table,int row,const engines::engine& engine ) const
 {
 	if( downloadManager::finishedStatus::finishedWithSuccess( table,row ) ){
 
-		auto m = util::split( table.uiText( row ),'\n',true ) ;
+		const auto& ee = table.uiText( row ) ;
+		const auto& ss = table.entryAt( row ).fileNames ;
 
-		m.removeFirst() ;
-
-		for( const auto& it : util::asConst( m ) ){
-
-			if( galleryDl ){
-
-				auto e = settings.downloadFolder() ;
-				auto m = QUrl::fromLocalFile( e + "/gallery-dl/" + it ) ;
-
-				QDesktopServices::openUrl( m ) ;
-			}else{
-				auto s = QDir::fromNativeSeparators( it ) ;
-				auto ss = QDir::fromNativeSeparators( settings.downloadFolder() ) ;
-
-				if( s.startsWith( ss ) ){
-
-					auto m = QUrl::fromLocalFile( s ) ;
-
-					QDesktopServices::openUrl( m ) ;
-				}else{
-					auto m = QUrl::fromLocalFile( settings.downloadFolder() + "/" + it ) ;
-
-					QDesktopServices::openUrl( m ) ;
-				}
-			}
-		}
+		engine.openLocalFile( { ee,m_settings.downloadFolder(),ss } ) ;
 	}
-}
-
-void engines::openUrls( tableWidget& table,int row ) const
-{
-	_openUrls( table,row,m_settings,false ) ;
-}
-
-void engines::openUrls( tableWidget& table,int row,const engines::engine& engine ) const
-{
-	_openUrls( table,row,m_settings,engine.name() == "gallery-dl" ) ;
 }
 
 void engines::openUrls( const QString& path ) const
@@ -398,7 +364,7 @@ void engines::updateEngines( bool addAll,int id )
 
 		const auto& name = it.name() ;
 
-		if( it.likeYoutubeDl() ){
+		if( it.likeYtDlp() ){
 
 			const auto& m = m_settings.downloadFolder() ;
 
@@ -675,6 +641,8 @@ QStringList engines::enginesList() const
 
 	m.removeAll( m_defaultEngine.configFileName() ) ;
 
+	m.removeOne( "youtube-dl.json" ) ;
+
 	return m ;
 }
 
@@ -828,11 +796,11 @@ engines::engine::engine( Logger& logger,
 	m_position( m_jsonObject.value( "VersionStringPosition" ).toInt() ),
 	m_valid( true ),
 	m_autoUpdate( m_jsonObject.value( "AutoUpdate" ).toBool( true ) ),
-	m_likeYoutubeDl( m_jsonObject.value( "LikeYoutubeDl" ).toBool() ),
 	m_mainEngine( true ),
 	m_archiveContainsFolder( m_jsonObject.value( "ArchiveContainsFolder" ).toBool() ),
 	m_versionArgument( m_jsonObject.value( "VersionArgument" ).toString() ),
 	m_name( m_jsonObject.value( "Name" ).toString() ),
+	m_likeYtDlp( m_name.startsWith( "yt-dlp" ) || m_name == "ytdl-patched" ),
 	m_exeFolderPath( m_jsonObject.value( "BackendPath" ).toString() ),
 	m_downloadUrl( m_jsonObject.value( "DownloadUrl" ).toString() )
 {
@@ -1511,11 +1479,6 @@ void engines::engine::baseEngine::updateEnginePaths( const Context&,QString&,QSt
 {
 }
 
-bool engines::engine::baseEngine::likeYtdlp()
-{
-	return false ;
-}
-
 void engines::engine::baseEngine::updateLocalOptions( QStringList& )
 {
 }
@@ -1532,6 +1495,40 @@ QString engines::engine::baseEngine::setCredentials( QStringList&,QStringList& )
 util::Json engines::engine::baseEngine::parsePlayListData( const QByteArray& e )
 {
 	return e ;
+}
+
+void engines::engine::baseEngine::openLocalFile( const engines::engine::baseEngine::localFile& l )
+{
+	auto e = [ & ](){
+
+		if( l.fileNames.isEmpty() ){
+
+			auto m = util::split( l.uiText,'\n',true ) ;
+
+			if( m.size() > 1 ){
+
+				return m[ 1 ] ;
+			}else{
+				return QString() ;
+			}
+		}else{
+			return l.fileNames.last() ;
+		}
+	}() ;
+
+	auto s = QDir::fromNativeSeparators( e ) ;
+	auto ss = QDir::fromNativeSeparators( l.downloadFolder ) ;
+
+	if( s.startsWith( ss ) ){
+
+		auto m = QUrl::fromLocalFile( s ) ;
+
+		QDesktopServices::openUrl( m ) ;
+	}else{
+		auto m = QUrl::fromLocalFile( l.downloadFolder + "/" + e ) ;
+
+		QDesktopServices::openUrl( m ) ;
+	}
 }
 
 engines::engine::baseEngine::onlineVersion engines::engine::baseEngine::versionInfoFromGithub( const QByteArray& e )
@@ -1746,7 +1743,7 @@ private:
 	}
 	bool validJson( bool humanReadable,const QByteArray& data )
 	{
-		if( m_engine.likeYoutubeDl() && humanReadable ){
+		if( m_engine.likeYtDlp() && humanReadable ){
 
 			if( data.startsWith( '[' ) || data.startsWith( '{' ) ){
 

@@ -69,8 +69,7 @@ const char * lux::testData()
 828.86 KiB / 864.65 KiB [======================================================>--] 95.09 KiB p/s 95.86% 0s
 844.86 KiB / 864.65 KiB [=======================================================>-] 95.09 KiB p/s 97.71% 0s
 864.65 KiB / 864.65 KiB [=====================================================] 139.03 KiB p/s 100.00% 6.4s
-Merging video parts into TRIPLE PLAY‼ Braves capitalize on shoddy baserunning by Red Sox - MLB on ESPN.mp4
-)R" ;
+Merging video parts into TRIPLE PLAY‼ Braves capitalize on shoddy baserunning by Red Sox - MLB on ESPN.mp4)R" ;
 }
 
 static void _replaceChars( QByteArray& )
@@ -207,8 +206,22 @@ bool lux::foundNetworkUrl( const QString& s )
 	}
 }
 
+static QByteArray _hash( const QString& r )
+{
+	auto m = std::time( nullptr ) ;
+	auto e = QString::number( m ) + r ;
+
+	QCryptographicHash hash( QCryptographicHash::Sha256 ) ;
+
+	hash.addData( e.toUtf8() ) ;
+
+	return hash.result().toHex().mid( 0,8 ) ;
+}
+
 void lux::updateDownLoadCmdOptions( const engines::engine::baseEngine::updateOpts& s,bool e )
 {
+	engines::engine::baseEngine::updateDownLoadCmdOptions( s,e ) ;
+
 	for( int m = 0 ; m < s.ourOptions.size() ; m++ ){
 
 		if( s.ourOptions[ m ] == "-O" ){
@@ -223,25 +236,13 @@ void lux::updateDownLoadCmdOptions( const engines::engine::baseEngine::updateOpt
 
 				if( e.contains( "%(id)s" ) ){
 
-					e.replace( "%(id)s",[ &r ](){
-
-						auto m = std::time( nullptr ) ;
-						auto e = QString::number( m ) + r ;
-
-						QCryptographicHash hash( QCryptographicHash::Sha256 ) ;
-
-						hash.addData( e.toUtf8() ) ;
-
-						return hash.result().toHex().mid( 0,8 ) ;
-					}() ) ;
+					e.replace( "%(id)s",_hash( r ) ) ;
 				}
 
 				break ;
 			}
 		}
 	}
-
-	engines::engine::baseEngine::updateDownLoadCmdOptions( s,e ) ;
 }
 
 static bool _meetCondition( const engines::engine&,const QByteArray& e )
@@ -277,6 +278,29 @@ public:
 	{
 		return m_fileSizeString ;
 	}
+	QByteArray extension() const
+	{
+		const auto mm = util::split( m_quality,' ' ) ;
+
+		for( const auto& it : mm ){
+
+			if( it.endsWith( ";" ) ){
+
+				auto e = it ;
+
+				auto s = e.replace( ";","" ) ;
+
+				auto ss = s.indexOf( "/" ) ;
+
+				if( ss != -1 ){
+
+					return "." + s.mid( ss + 1 ) ;
+				}
+			}
+		}
+
+		return {} ;
+	}
 	qint64 fileSizeInt() const
 	{
 		return m_fileSizeInt ;
@@ -287,6 +311,8 @@ private:
 		auto data = allData.mid( 0,m ) ;
 
 		m_title = this->getEntry( "Title:","Type:",data ) ;
+
+		m_quality = this->getEntry( "Quality:","Size:",data ) ;
 
 		auto size = this->getEntry( "Size:","#",data ) ;
 
@@ -325,6 +351,7 @@ private:
 	}
 	QByteArray m_title ;
 	QByteArray m_fileSizeString ;
+	QByteArray m_quality ;
 	qint64 m_fileSizeInt = 0 ;
 };
 
@@ -511,17 +538,18 @@ const QByteArray& lux::lux_dlFilter::operator()( Logger::Data& e )
 
 		const auto& m = this->doneDownloading( allData ) ;
 
-		e.addFileName( m ) ;
+		if( m.isEmpty() ){
 
-		return m ;
+			return this->setFileName( e,allData ) ;
+		}else{
+			return m ;
+		}
 	}else{
 		const auto& s = e.lastText() ;
 
 		if( s.startsWith( "Elapsed Time:" ) ){
 
 			m_tmp = m_banner + "\n" + s ;
-
-			return m_tmp ;
 		}else{
 			if( m_title.isEmpty() ){
 
@@ -533,17 +561,19 @@ const QByteArray& lux::lux_dlFilter::operator()( Logger::Data& e )
 				}
 			}
 
-			if( e.lastLineIsProgressLine() ){
+			if( s.contains( "Merging video parts into " ) ){
+
+				m_tmp = m_title + "\n...Merging Video Parts..." ;
+
+			}else if( e.lastLineIsProgressLine() ){
 
 				m_tmp = m_title + "\n" + e.lastText() ;
-
-				return m_tmp ;
 			}else{
 				m_tmp = m_title + "\n" + m_progress.text() ;
-
-				return m_tmp ;
 			}
 		}
+
+		return m_tmp ;
 	}
 }
 
@@ -598,45 +628,133 @@ const QByteArray& lux::lux_dlFilter::doneDownloading( const QByteArray& allData 
 
 			m_fileName = allData.mid( m + 25 ) ;
 
-			m = m_fileName.indexOf( "[media-downloader]" ) ;
+			m = m_fileName.indexOf( "\n[media-downloader]" ) ;
 
 			if( m != -1 ){
 
 				m_fileName = m_fileName.mid( 0,m ) ;
 			}
-
-			return m_fileName ;
 		}
 	}
 
-	if( m_fileName.isEmpty() ){
+	m_tmp.clear() ;
 
-		if( m_title.isEmpty() ){
+	return m_tmp ;
+}
 
-			//???
-			m_tmp.clear() ;
+QByteArray lux::lux_dlFilter::fileName( const QByteArray& m,const QByteArray& extension )
+{
+	if( m.endsWith( extension ) ){
 
-			return m_tmp ;
+		return m ;
+	}else{
+		return m + extension ;
+	}
+}
+
+const QByteArray& lux::lux_dlFilter::setFileName( Logger::Data& e,const QByteArray& allData )
+{
+	auto extension = LuxHeader( m_locale,allData ).extension() ;
+
+	auto fileNameCmd = this->fileNameFromCmd( e ) ;
+
+	if( fileNameCmd.contains( "%(title)s" ) ){
+
+		auto fileName = this->fileName( fileNameCmd,extension ) ;
+
+		if( m_fileName.isEmpty() || m_fileName.contains( "%(title)s" ) ){
+
+			fileNameCmd.replace( "%(title)s",_title( m_title ) ) ;
 		}else{
-			const auto& m = _title( m_title ) ;
+			fileNameCmd.replace( "%(title)s",m_fileName ) ;
+		}
 
-			if( QFile::exists( m_downloadFolder + m + ".webm" ) ){
+		fileNameCmd = this->fileName( fileNameCmd,extension ) ;
 
-				m_fileName = m + ".webm" ;
+		auto old = m_downloadFolder + fileName ;
+		auto New = m_downloadFolder + fileNameCmd ;
 
-				return m_fileName ;
+		if( QFile::exists( New ) ){
 
-			}else if( QFile::exists( m_downloadFolder + m + ".mp4" ) ){
+			m_tmp = "ERROR: Failed To Rename, Destination Path Already Taken" ;
+			m_tmp += "\n" + fileName ;
 
-				m_fileName = m + ".mp4" ;
+			e.addFileName( fileName ) ;
+		}else{
+			utils::qthread::run( [ = ](){ QFile::rename( old,New ) ; } ) ;
 
-				return m_fileName ;
+			e.addFileName( fileNameCmd ) ;
+
+			m_tmp = fileNameCmd ;
+		}
+
+		return m_tmp ;
+	}else{
+		if( m_fileName.isEmpty() ){
+
+			m_tmp = this->fileName( _title( m_title ),extension ) ;
+		}else{
+			m_tmp = this->fileName( m_fileName,extension ) ;
+		}
+
+		e.addFileName( m_tmp ) ;
+
+		return m_tmp ;
+	}
+}
+
+QByteArray lux::lux_dlFilter::fileNameFromCmd( const Logger::Data& e )
+{	
+	class lux
+	{
+	public:
+		lux( QByteArray& m ) : m_title( m )
+		{
+		}
+		bool operator()( int,const QByteArray& s )
+		{
+			if( this->valid( s ) ){
+
+				return this->setTitle( s ) ;
 			}else{
-				m_tmp = m ;
-				return m_tmp ;
+				return false ;
 			}
 		}
-	}else{
-		return m_fileName ;
-	}
+	private:
+		bool valid( const QByteArray& s )
+		{
+			if( s.startsWith( "[media-downloader] cmd: " ) ){
+
+				return s.contains( "-O" ) ;
+			}else{
+				return false ;
+			}
+		}
+		bool setTitle( const QByteArray& s )
+		{
+			const auto& mm = util::splitPreserveQuotes( s ) ;
+
+			for( auto it = mm.begin() ; it != mm.end() ; it++ ){
+
+				if( *it == "-O" ){
+
+					it++ ;
+
+					if( it != mm.end() ){
+
+						m_title = it->toUtf8() ;
+					}
+				}
+			}
+
+			return true ;
+		}
+		QByteArray& m_title ;
+	} ;
+
+	QByteArray m ;
+
+	e.forEach( lux( m ) ) ;
+
+	return m ;
 }

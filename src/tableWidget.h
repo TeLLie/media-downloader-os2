@@ -209,6 +209,7 @@ public:
 		QJsonArray mediaProperties ;
 		QJsonObject uiJson ;
 		QPixmap thumbnail ;
+		QStringList fileNames ;
 		bool splitByChapters = false ;
 		bool banner = false ;
 		bool showFirst = false ;
@@ -236,6 +237,10 @@ public:
 	const tableWidget::entry& entryAt( size_t s )
 	{
 		return m_items[ s ] ;
+	}
+	void setFileNames( size_t m,const QStringList& s )
+	{
+		m_items[ m ].fileNames = s ;
 	}
 	enum class type{ DownloadOptions,
 			 DownloadExtendedOptions,
@@ -466,6 +471,10 @@ public:
 	{
 		return m_stuff[ static_cast< size_t >( s ) ] ;
 	}
+	const Stuff& stuffAtLast() const
+	{
+		return m_stuff.back() ;
+	}
 	int addRow( Stuff stuff = Stuff() )
 	{
 		auto row = m_table.rowCount() ;
@@ -518,9 +527,11 @@ public:
 
 		return row ;
 	}
-	int add( const engines::engine::baseEngine::mediaInfo& m )
+	int add( engines::engine::baseEngine::mediaInfo mm )
 	{
-		int row = this->addRow( m ) ;
+		int row = this->addRow( std::move( mm ) ) ;
+
+		const auto& m = this->stuffAtLast() ;
 
 		const auto& a = m.id() ;
 		const auto& b = m.ext() ;
@@ -710,11 +721,11 @@ private:
 
 		this->clear() ;
 
-		for( const auto& it : stuff ){
+		for( auto& it : stuff ){
 
-			int row = this->addRow( it ) ;
+			int row = this->addRow( std::move( it ) ) ;
 
-			this->fromStuff( it,Forwader( row,*this ) ) ;
+			this->fromStuff( this->stuffAtLast(),Forwader( row,*this ) ) ;
 		}
 	}
 	template< typename Rows >
