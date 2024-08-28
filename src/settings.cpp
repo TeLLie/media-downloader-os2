@@ -23,6 +23,7 @@
 #include "translator.h"
 #include "logger.h"
 #include "themes.h"
+#include "directoryEntries.h"
 
 #include <QDir>
 #include <QFile>
@@ -31,38 +32,6 @@
 #include <algorithm>
 
 #include <QDesktopServices>
-
-static QString _configPath()
-{
-#if QT_VERSION >= QT_VERSION_CHECK( 5,6,0 )
-	auto s = QStandardPaths::standardLocations( QStandardPaths::AppDataLocation ) ;
-
-	if( s.isEmpty() ){
-
-		return QDir::homePath() + "/.config/media-downloader/" ;
-	}else{
-		return s.first() + "/media-downloader/" ;
-	}
-#else
-	return QDir::homePath() + "/.config/media-downloader/" ;
-#endif
-}
-
-static QString _downloadLocation()
-{
-#if QT_VERSION >= QT_VERSION_CHECK( 5,6,0 )
-	auto s = QStandardPaths::standardLocations( QStandardPaths::DownloadLocation ) ;
-
-	if( s.isEmpty() ){
-
-		return QDir::homePath() + "/Downloads" ;
-	}else{
-		return s.first() ;
-	}
-#else
-	return QDir::homePath() + "/Downloads" ;
-#endif
-}
 
 static QString _monitorClipboadUrl( settings::tabName e )
 {
@@ -333,29 +302,27 @@ static std::unique_ptr< QSettings > _set_config( const QString& path )
 	return std::make_unique< QSettings >( m,QSettings::IniFormat ) ;
 }
 
-static std::unique_ptr< QSettings > _init( const QString& dataPath,bool portableVersion )
+std::unique_ptr< QSettings > settings::init()
 {	
 	if( utility::platformIsWindows() ){
 
-		if( portableVersion ){
+		if( m_options.portableVersion() ){
 
-			return _set_config( dataPath ) ;
+			return _set_config( m_options.dataPath() ) ;
 		}else{
-			return _set_config( _configPath() ) ;
+			return _set_config( m_appDataPath ) ;
 		}
 	}else{
-		auto path = _configPath() ;
+		if( QFile::exists( m_appDataPath + "/settings/settings.ini" ) ){
 
-		if( QFile::exists( path + "/settings/settings.ini" ) ){
-
-			return _set_config( path ) ;
+			return _set_config( m_appDataPath ) ;
 		}else{
 			/*
 			 * Migrating to .ini config file
 			 */
 			QSettings oldSettings( "media-downloader","media-downloader" ) ;
 
-			auto newSettings = _set_config( path ) ;
+			auto newSettings = _set_config( m_appDataPath ) ;
 
 			const auto keys = oldSettings.allKeys() ;
 
@@ -371,11 +338,51 @@ static std::unique_ptr< QSettings > _init( const QString& dataPath,bool portable
 	}
 }
 
-settings::settings( const utility::cliArguments& args ) :
-	m_options( args ),
-	m_settingsP( _init( m_options.dataPath(),m_options.portableVersion() ) ),
-	m_settings( *m_settingsP )
+#if QT_VERSION >= QT_VERSION_CHECK( 5,6,0 )
 
+static QString _appDataLocation()
+{
+	auto s = QStandardPaths::standardLocations( QStandardPaths::AppDataLocation ) ;
+
+	if( s.isEmpty() ){
+
+		return QDir::homePath() + "/.local/share/media-downloader/" ;
+	}else{
+		return s.first() + "/media-downloader/" ;
+	}
+}
+
+static QString _downloadLocation()
+{
+	auto s = QStandardPaths::standardLocations( QStandardPaths::DownloadLocation ) ;
+
+	if( s.isEmpty() ){
+
+		return QDir::homePath() + "/Downloads" ;
+	}else{
+		return s.first() ;
+	}
+}
+
+#else
+
+static QString _appDataLocation()
+{
+	return QDir::homePath() + "/.local/share/media-downloader/" ;
+}
+
+static QString _downloadLocation()
+{
+	return QDir::homePath() + "/Downloads" ;
+}
+
+#endif
+
+settings::settings( const utility::cliArguments& args ) :
+	m_appDataPath( _appDataLocation() ),
+	m_options( args,m_appDataPath ),
+	m_settingsP( this->init() ),
+	m_settings( *m_settingsP )
 {
 #if QT_VERSION >= QT_VERSION_CHECK( 5,6,0 )
 
@@ -394,9 +401,19 @@ settings::settings( const utility::cliArguments& args ) :
 	}
 }
 
+settings::~settings()
+{
+	this->clearFlatPakTemps() ;
+}
+
 QSettings& settings::bk()
 {
 	return m_settings ;
+}
+
+void settings::init_done()
+{
+	utils::qthread::run( this,&settings::clearFlatPakTemps ) ;
 }
 
 void settings::setTabNumber( int s )
@@ -419,6 +436,21 @@ size_t settings::maxConcurrentDownloads()
 	auto m = this->getOption( "MaxConcurrentDownloads",4 ) ;
 
 	return static_cast< size_t >( m ) ;
+}
+
+QIcon settings::getIcon( const QString& e )
+{
+	if( e == "media-downloader" ){
+
+		return QIcon( ":/media-downloader" ) ;
+	}else{
+		if( this->themeName().contains( "dark",Qt::CaseInsensitive ) ){
+
+			return QIcon( ":/icons/blue/" + e ) ;
+		}else{
+			return QIcon( ":/icons/black/" + e ) ;
+		}
+	}
 }
 
 const QString& settings::windowsOnly3rdPartyBinPath()
@@ -453,18 +485,18 @@ void settings::setDownloadFolder( const QString& m )
 	}
 }
 
-static QString _downloadFolder( QSettings& settings,const QString& defaultPath,Logger * logger )
+QString settings::downloadFolder( const QString& defaultPath,settings::sLogger& logger )
 {
 	auto mediaDownloaderCWD = utility::stringConstants::mediaDownloaderCWD() ;
 
 	auto mm = utility::stringConstants::mediaDownloaderDefaultDownloadPath() ;
 
-	if( !settings.contains( "DownloadFolder" ) ){
+	if( !m_settings.contains( "DownloadFolder" ) ){
 
-		settings.setValue( "DownloadFolder",mm ) ;
+		m_settings.setValue( "DownloadFolder",mm ) ;
 	}
 
-	auto m = settings.value( "DownloadFolder" ).toString() ;
+	auto m = m_settings.value( "DownloadFolder" ).toString() ;
 
 	if( m.startsWith( mediaDownloaderCWD ) ){
 
@@ -479,20 +511,17 @@ static QString _downloadFolder( QSettings& settings,const QString& defaultPath,L
 
 		return m ;
 	}else{
-		if( logger ){
+		auto id = utility::sequentialID() ;
 
-			auto id = utility::sequentialID() ;
+		auto s = utility::barLine() ;
 
-			auto s = utility::barLine() ;
+		logger.add( s,id ) ;
 
-			logger->add( s,id ) ;
+		logger.add( QObject::tr( "Resetting download folder to default" ).toUtf8(),id ) ;
 
-			logger->add( QObject::tr( "Resetting download folder to default" ),id ) ;
+		logger.add( s,id ) ;
 
-			logger->add( s,id ) ;
-		}
-
-		settings.setValue( "DownloadFolder",mm ) ;
+		m_settings.setValue( "DownloadFolder",mm ) ;
 
 		QDir().mkpath( defaultPath ) ;
 
@@ -500,7 +529,18 @@ static QString _downloadFolder( QSettings& settings,const QString& defaultPath,L
 	}
 }
 
-QString settings::downloadFolder( Logger * logger )
+QString settings::downloadLocation()
+{
+	if( utility::platformisFlatPak() ){
+
+		//return m_appDataPath + "Downloads" ;
+		return _downloadLocation() ;
+	}else{
+		return _downloadLocation() ;
+	}
+}
+
+QString settings::downloadFolderImp( settings::sLogger logger )
 {
 	if( utility::platformIsWindows() ){
 
@@ -508,23 +548,23 @@ QString settings::downloadFolder( Logger * logger )
 
 			const auto& dPath = this->windowsOnlyDefaultPortableVersionDownloadFolder() ;
 
-			return _downloadFolder( m_settings,dPath,logger ) ;
+			return this->downloadFolder( dPath,logger ) ;
 		}else{
-			return _downloadFolder( m_settings,_downloadLocation(),logger ) ;
+			return this->downloadFolder( this->downloadLocation(),logger ) ;
 		}
 	}else{
-		return _downloadFolder( m_settings,_downloadLocation(),logger ) ;
+		return this->downloadFolder( this->downloadLocation(),logger ) ;
 	}
 }
 
 QString settings::downloadFolder()
 {
-	return this->downloadFolder( nullptr ) ;
+	return this->downloadFolderImp( {} ) ;
 }
 
 QString settings::downloadFolder( Logger& logger )
 {
-	return this->downloadFolder( &logger ) ;
+	return this->downloadFolderImp( logger ) ;
 }
 
 bool settings::showTrayIcon()
@@ -816,7 +856,7 @@ QPixmap settings::defaultVideoThumbnailIcon( settings::tabName m )
 	auto width = this->thumbnailWidth( m ) ;
 	auto height = this->thumbnailHeight( m ) ;
 
-	return QIcon( ":/video" ).pixmap( width,height ) ;
+	return this->getIcon( "video" ).pixmap( width,height ) ;
 }
 
 void settings::setDesktopNotifyOnDownloadComplete( bool e )
@@ -911,6 +951,11 @@ const QString& settings::configPaths()
 	return m_options.dataPath() ;
 }
 
+const QString& settings::appDataPath()
+{
+	return m_appDataPath ;
+}
+
 void settings::runCommandOnSuccessfulDownload( const QString& s,const QString& df,const QStringList& e )
 {
 	auto m = this->getOption( "CommandOnSuccessfulDownload",QString() ) ;
@@ -1002,6 +1047,22 @@ void settings::setWindowDimensions( const QString& window,const QString& dimenst
 	m_settings.setValue( "WindowDimensions_" + window,dimenstion ) ;
 }
 
+void settings::clearFlatPakTemps()
+{
+	if( utility::platformisFlatPak() ){
+
+		auto ee = m_appDataPath + "tmp" ;
+
+		directoryManager::readAll( ee ).forEachFile( [ & ]( const QString& e ){
+
+			if( e.endsWith( ".m3u8" ) ){
+
+				QFile::remove( ee + "/" + e ) ;
+			}
+		} ) ;
+	}
+}
+
 QString settings::windowsDimensions( const QString& window )
 {
 	auto m = "WindowDimensions_" + window ;
@@ -1019,7 +1080,7 @@ bool settings::portableVersion()
 	return m_options.portableVersion() ;
 }
 
-settings::options::options( const utility::cliArguments& args )
+settings::options::options( const utility::cliArguments& args,const QString& appPath )
 {
 	if( utility::platformIsWindows() ){
 
@@ -1057,13 +1118,13 @@ settings::options::options( const utility::cliArguments& args )
 
 				m_portableVersion = true ;
 			}else{
-				m_dataPath = _configPath() ;
+				m_dataPath = appPath ;
 
 				m_portableVersion = false ;
 			}
 		}
 	}else{
-		m_dataPath = _configPath() ;
+		m_dataPath = appPath ;
 
 		m_portableVersion = false ;
 	}
@@ -1158,10 +1219,81 @@ void settings::mediaPlayer::action::logError() const
 	m_logger.add( bar,id ) ;
 }
 
+static QByteArray _hash( quint64 i,const QString& s )
+{
+	auto m = utility::simpleRandomNumber() ;
+
+	auto e = QString::number( m + i ) + s ;
+
+	QCryptographicHash hash( QCryptographicHash::Sha256 ) ;
+
+	hash.addData( e.toUtf8() ) ;
+
+	return hash.result().toHex().mid( 0,8 ) ;
+}
+
+static QString _tmpFile( const QString& e,const QString& s )
+{
+	QString m ;
+
+	for( quint64 i = 0 ; i < 100 ; i++ ){
+
+		m = "tmp/" + _hash( i,s ) + ".m3u8" ;
+
+		if( e.endsWith( "/" ) ){
+
+			m = e + m ;
+		}else{
+			m = e + "/" + m ;
+		}
+
+		if( !QFile::exists( m ) ){
+
+			break ;
+		}
+	}
+
+	return m ;
+}
+
 void settings::mediaPlayer::action::operator()() const
 {
-	if( !QProcess::startDetached( m_playerOpts.exePath,{ m_url } ) ){
+	if( utility::platformisFlatPak() ){
 
-		this->logError() ;
+		auto m = _tmpFile( m_appDataPath,m_url ) ;
+
+		QFile ff( m ) ;
+
+		if( ff.open( QIODevice::WriteOnly ) ){
+
+			auto duration = m_obj.value( "duration" ).toString().toUtf8() ;
+			auto title    = m_obj.value( "title" ).toString().toUtf8() ;
+
+			QByteArray aa = "#EXTM3U\n\n" ;
+
+			if( duration != "0" && !title.contains( "NA" ) ){
+
+				aa += "#EXTINF:" + duration + ", " + title + "\n" ;
+			}
+
+			ff.write( aa + m_url.toUtf8() + "\n" ) ;
+
+			ff.close() ;
+
+			QDesktopServices::openUrl( QUrl::fromLocalFile( m ) ) ;
+		}
+	}else{
+		if( !QProcess::startDetached( m_playerOpts.exePath,{ m_url } ) ){
+
+			this->logError() ;
+		}
+	}
+}
+
+void settings::sLogger::add( const QByteArray& data,int id )
+{
+	if( m_logger ){
+
+		m_logger->add( data,id ) ;
 	}
 }

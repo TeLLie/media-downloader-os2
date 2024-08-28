@@ -91,10 +91,13 @@ public:
 	enum class tabName{ basic,batch,playlist } ;
 
 	settings( const utility::cliArguments& ) ;
-
+	~settings() ;
 	QSettings& bk() ;
+	void init_done() ;
 
 	size_t maxConcurrentDownloads() ;
+
+	QIcon getIcon( const QString& ) ;
 
 	const QString& windowsOnly3rdPartyBinPath() ;
 	const QString& windowsOnlyExeBinPath() ;
@@ -117,9 +120,19 @@ public:
 		public:
 			action( const QString& url,
 				Logger& logger,
-				const settings::mediaPlayer::PlayerOpts& opts ) :
-				m_url( url ),m_playerOpts( opts ),m_logger( logger )
+				const settings::mediaPlayer::PlayerOpts& opts,
+				const QString& app,
+				const QJsonObject& obj ) :
+				m_url( url ),
+				m_playerOpts( opts ),
+				m_logger( logger ),
+				m_appDataPath( app ),
+				m_obj( obj )
 			{
+			}
+			action move()
+			{
+				return std::move( *this ) ;
 			}
 			void operator()() const ;
 			void logError() const ;
@@ -127,6 +140,8 @@ public:
 			QString m_url ;
 			const settings::mediaPlayer::PlayerOpts& m_playerOpts ;
 			Logger& m_logger ;
+			const QString& m_appDataPath ;
+			const QJsonObject& m_obj ;
 		} ;
 
 		mediaPlayer( const std::vector< settings::mediaPlayer::PlayerOpts >&,Logger& ) ;
@@ -139,9 +154,11 @@ public:
 			return !m_playerOpts.empty() ;
 		}
 		settings::mediaPlayer::action ac( const QString& url,
-						  const settings::mediaPlayer::PlayerOpts& opts ) const
+						  const settings::mediaPlayer::PlayerOpts& opts,
+						  const QString& appDataPath,
+						  const QJsonObject& obj ) const
 		{
-			return { url,m_logger,opts } ;
+			return { url,m_logger,opts,appDataPath,obj } ;
 		}
 	private:
 		const std::vector< settings::mediaPlayer::PlayerOpts >& m_playerOpts ;
@@ -165,6 +182,7 @@ public:
 	QString playlistRangeHistoryLastUsed() ;
 	QString gitHubDownloadUrl() ;
 	const QString& configPaths() ;
+	const QString& appDataPath() ;
 	QString textEncoding() ;
 	QStringList getOptionsHistory( settings::tabName ) ;
 	QStringList playlistRangeHistory() ;
@@ -257,6 +275,8 @@ public:
 	void setLocalizationLanguage( const QString& language ) ;
 	void setWindowDimensions( const QString& window,const QString& dimenstion ) ;
 private:	
+	void clearFlatPakTemps() ;
+
 	std::vector< settings::mediaPlayer::PlayerOpts > openWith() ;
 
 	QVariant getValue( const QString& opt,const QVariant& e )
@@ -294,11 +314,30 @@ private:
 		return this->getValue( opt,e ).toStringList() ;
 	}
 
-	QString downloadFolder( Logger * ) ;
+	class sLogger
+	{
+	public:
+		sLogger() : m_logger( nullptr )
+		{
+		}
+		sLogger( Logger& logger ) : m_logger( &logger )
+		{
+		}
+		void add( const QByteArray&,int ) ;
+	private:
+		Logger * m_logger ;
+	} ;
+
+	QString downloadFolderImp( settings::sLogger ) ;
+	QString downloadFolder( const QString& defaultPath,settings::sLogger& ) ;
+
+	std::unique_ptr< QSettings > init() ;
+
+	QString downloadLocation() ;
 
 	struct options
 	{
-		options( const utility::cliArguments& ) ;
+		options( const utility::cliArguments&,const QString& ) ;
 
 		const QString& dataPath() const
 		{
@@ -327,9 +366,9 @@ private:
 		bool m_portableVersion ;
 	} ;
 
-	options m_options ;
-
 	bool m_EnableHighDpiScaling ;
+	QString m_appDataPath ;
+	options m_options ;
 	std::unique_ptr< QSettings > m_settingsP ;
 	QSettings& m_settings ;
 };

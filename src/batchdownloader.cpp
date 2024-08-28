@@ -64,9 +64,9 @@ batchdownloader::batchdownloader( const Context& ctx ) :
 		 &batchdownloader::addTextToUi,
 		 Qt::QueuedConnection ) ;
 
-	m_ui.pbBDPasteClipboard->setIcon( QIcon( ":/clipboard" ) ) ;
-	m_ui.pbBDOptionsHistory->setIcon( QIcon( ":/recentlyUsed" ) ) ;
-	m_ui.pbBDOptionsDownload->setIcon( QIcon( ":/downloadOptions" ) ) ;
+	m_ui.pbBDPasteClipboard->setIcon( m_settings.getIcon( "clipboard" ) ) ;
+	m_ui.pbBDOptionsHistory->setIcon( m_settings.getIcon( "recentlyUsed" ) ) ;
+	m_ui.pbBDOptionsDownload->setIcon( m_settings.getIcon( "downloadOptions" ) ) ;
 
 	m_tableWidgetBDList.setTableWidget( [](){
 
@@ -101,9 +101,7 @@ batchdownloader::batchdownloader( const Context& ctx ) :
 
 				const auto& obj = m_tableWidgetBDList.stuffAt( row ) ;
 
-				auto arr = obj.value( "urls" ).toArray() ;
-
-				utility::contextMenuForDirectUrl( arr,m_ctx ) ;
+				utility::contextMenuForDirectUrl( obj,m_ctx ) ;
 			}
 
 		}else if( m_listType == batchdownloader::listType::SUBTITLES ){
@@ -1655,7 +1653,10 @@ void batchdownloader::getListFromFile( const QString& e,bool deleteFile )
 
 				for( const auto& it : util::split( list,'\n',true ) ){
 
-					items.add( it ) ;
+					if( it.startsWith( "http" ) ){
+
+						items.add( it ) ;
+					}
 				}
 
 				const auto& engine = this->defaultEngine() ;
@@ -2016,7 +2017,9 @@ void batchdownloader::showList( batchdownloader::listType listType,
 
 			if( !mp.isEmpty() ){
 
-				const auto ss = engine.mediaProperties( m_ctx.logger(),mp ) ;
+				auto data = m_table.mediaEntry( row ) ;
+
+				const auto ss = engine.mediaProperties( m_ctx.logger(),data ) ;
 
 				if( !ss.empty() ){
 
@@ -2209,7 +2212,9 @@ void batchdownloader::showList( batchdownloader::listType listType,
 
 					auto m = QJsonDocument::fromJson( a ) ;
 
-					m_parent.m_table.replace( m.array(),m_row ) ;
+					auto array = m.object().value( "formats" ).toArray() ;
+
+					m_parent.m_table.replace( array,m_row ) ;
 				}
 			}
 		}

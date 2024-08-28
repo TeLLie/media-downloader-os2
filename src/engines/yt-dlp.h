@@ -36,7 +36,7 @@ public:
 	class yt_dlplFilter : public engines::engine::baseEngine::filter
 	{
 	public:
-		yt_dlplFilter( int processId,const engines::engine&,yt_dlp& ) ;
+		yt_dlplFilter( int,const engines::engine&,yt_dlp&,const QString& ) ;
 
 		const QByteArray& operator()( Logger::Data& e ) override ;
 
@@ -56,6 +56,7 @@ public:
 		QByteArray m_tmp ;
 		std::vector< QByteArray > m_fileNames ;
 		yt_dlp& m_parent ;
+		QByteArray m_downloadFolder ;
 	} ;
 
 	engines::engine::baseEngine::FilterOutPut filterOutput() override ;
@@ -101,6 +102,9 @@ public:
 		const QString&,
 		bool ) ;
 private:
+	std::vector< engines::engine::baseEngine::mediaInfo >
+	mediaProperties( Logger&,const QJsonArray&,const QJsonObject& ) ;
+
 	void appendCompatOption( QStringList& ) ;
 	const engines::engine& m_engine ;
 	QJsonArray m_objs ;

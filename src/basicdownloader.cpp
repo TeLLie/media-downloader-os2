@@ -36,9 +36,9 @@ basicdownloader::basicdownloader( const Context& ctx ) :
 	m_tableList( *m_ui.bdTableWidgetList,m_ctx.mainWidget().font() ),
 	m_bogusTable( m_bogusTableOriginal,m_ctx.mainWidget().font(),0,m_settings.textAlignment() )
 {
-	m_ui.pbPasteClipboard->setIcon( QIcon( ":/clipboard" ) ) ;
-	m_ui.pbOptionsHistory->setIcon( QIcon( ":/recentlyUsed" ) ) ;
-	m_ui.pbOptionsDownloadOptions->setIcon( QIcon( ":/downloadOptions" ) ) ;
+	m_ui.pbPasteClipboard->setIcon( m_settings.getIcon( "clipboard" ) ) ;
+	m_ui.pbOptionsHistory->setIcon( m_settings.getIcon( "recentlyUsed" ) ) ;
+	m_ui.pbOptionsDownloadOptions->setIcon( m_settings.getIcon( "downloadOptions" ) ) ;
 
 	this->setAsActive() ;
 
@@ -75,9 +75,7 @@ basicdownloader::basicdownloader( const Context& ctx ) :
 
 			const auto& obj = m_tableList.stuffAt( row ).toqJsonObject() ;
 
-			auto arr = obj.value( "urls" ).toArray() ;
-
-			utility::contextMenuForDirectUrl( arr,m_ctx ) ;
+			utility::contextMenuForDirectUrl( obj,m_ctx ) ;
 		}
 	} ) ;
 

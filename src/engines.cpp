@@ -222,13 +222,6 @@ void engines::openUrls( tableWidget& table,int row,const engines::engine& engine
 	}
 }
 
-void engines::openUrls( const QString& path ) const
-{
-	auto m = QUrl::fromLocalFile( path ) ;
-
-	QDesktopServices::openUrl( m ) ;
-}
-
 const QString& engines::defaultEngineName() const
 {
 	return m_defaultEngine.name() ;
@@ -335,11 +328,6 @@ void engines::updateEngines( bool addAll,int id )
 		}
 
 		_engine_add( "",{ *this,m_logger,"ffmpeg","-version",0,2,id } ) ;
-
-		if( !mm.contains( "aria2c.json" ) ){
-
-			_engine_add( "",{ *this,m_logger,"aria2c","--version",0,2,id } ) ;
-		}
 
 		for( const auto& it : this->getEngines() ){
 
@@ -1384,7 +1372,7 @@ std::vector< engines::engine::baseEngine::mediaInfo > engines::engine::baseEngin
 			auto resolution = a.takeAt( 0 ) ;
 			auto notes      = a.join( " " ) ;
 
-			s.emplace_back( format,extension,resolution,"NA","0",notes ) ;
+			s.emplace_back( format,extension,resolution,"NA","0",notes,"","" ) ;
 		}
 	}
 
@@ -1497,6 +1485,17 @@ util::Json engines::engine::baseEngine::parsePlayListData( const QByteArray& e )
 	return e ;
 }
 
+static void _openUrl( const QString& path )
+{
+	auto m = QUrl::fromLocalFile( path ) ;
+	QDesktopServices::openUrl( m ) ;
+}
+
+void engines::openUrls( const QString& s ) const
+{
+	_openUrl( s ) ;
+}
+
 void engines::engine::baseEngine::openLocalFile( const engines::engine::baseEngine::localFile& l )
 {
 	auto e = [ & ](){
@@ -1521,13 +1520,9 @@ void engines::engine::baseEngine::openLocalFile( const engines::engine::baseEngi
 
 	if( s.startsWith( ss ) ){
 
-		auto m = QUrl::fromLocalFile( s ) ;
-
-		QDesktopServices::openUrl( m ) ;
+		_openUrl( s ) ;
 	}else{
-		auto m = QUrl::fromLocalFile( l.downloadFolder + "/" + e ) ;
-
-		QDesktopServices::openUrl( m ) ;
+		_openUrl( l.downloadFolder + "/" + e ) ;
 	}
 }
 

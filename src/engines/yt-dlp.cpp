@@ -22,6 +22,7 @@
 #include <QJsonObject>
 #include <QJsonArray>
 #include <QJsonDocument>
+#include <QDir>
 
 #include "../networkAccess.h"
 #include "../utility.h"
@@ -812,8 +813,24 @@ engines::engine::baseEngine::FilterOutPut yt_dlp::filterOutput()
 class ytDlpMediainfo
 {
 public:
-	ytDlpMediainfo( const QJsonArray& array )
+	ytDlpMediainfo( const QJsonArray& array,const QJsonObject& obj )
 	{
+		m_title = obj.value( "title" ).toString() ;
+
+		auto dd = obj.value( "intDuration" ) ;
+
+		if( dd.isUndefined() ){
+
+			dd = obj.value( "duration" ) ;
+		}
+
+		if( dd.isDouble() ){
+
+			m_duration = QString::number( static_cast< int >( dd.toDouble() ) ) ;
+		}else{
+			m_duration = QString::number( dd.toInt() ) ;
+		}
+
 		for( const auto& it : array ){
 
 			this->add( it.toObject() ) ;
@@ -932,7 +949,7 @@ private:
 
 		ss = ss + s.join( ", " ) ;
 
-		m_medias.emplace_back( mt,arr,id,ext,rsn,size,sizeRaw,ss ) ;
+		m_medias.emplace_back( mt,arr,id,ext,rsn,size,sizeRaw,ss,m_duration,m_title ) ;
 	}
 	QString fileSizeRaw( const QJsonObject& e )
 	{
@@ -1013,17 +1030,14 @@ private:
 
 	std::vector< str > m_medias ;
 	Logger::locale m_locale ;
+	QString m_duration ;
+	QString m_title ;
 };
 
 std::vector< engines::engine::baseEngine::mediaInfo >
-yt_dlp::mediaProperties( Logger&,const QJsonArray& array )
+yt_dlp::mediaProperties( Logger& logger,const QJsonArray& array )
 {
-	if( array.isEmpty() ){
-
-		return {} ;
-	}else{
-		return ytDlpMediainfo( array ).sort() ;
-	}
+	return this->mediaProperties( logger,array,{} ) ;
 }
 
 std::vector< engines::engine::baseEngine::mediaInfo >
@@ -1035,13 +1049,26 @@ yt_dlp::mediaProperties( Logger& l,const QByteArray& e )
 
 	if( err.error == QJsonParseError::NoError ){
 
-		auto arr = json.object().value( "formats" ).toArray() ;
+		auto obj = json.object() ;
 
-		return this->mediaProperties( l,arr ) ;
+		auto arr = obj.value( "formats" ).toArray() ;
+
+		return this->mediaProperties( l,arr,obj ) ;
 	}else{
 		utility::failedToParseJsonData( l,err ) ;
 
 		return {} ;
+	}
+}
+
+std::vector< engines::engine::baseEngine::mediaInfo >
+yt_dlp::mediaProperties( Logger&,const QJsonArray& array,const QJsonObject& obj )
+{
+	if( array.isEmpty() ){
+
+		return {} ;
+	}else{
+		return ytDlpMediainfo( array,obj ).sort() ;
 	}
 }
 
@@ -1081,7 +1108,9 @@ void yt_dlp::setTextEncondig( const QString& args,QStringList& opts )
 
 engines::engine::baseEngine::DataFilter yt_dlp::Filter( int id )
 {
-	return { util::types::type_identity< yt_dlp::yt_dlplFilter >(),id,m_engine,*this } ;
+	auto m = util::types::type_identity< yt_dlp::yt_dlplFilter >() ;
+
+	return { m,id,m_engine,*this,m_downloadFolder } ;
 }
 
 QString yt_dlp::updateTextOnCompleteDownlod( const QString& uiText,
@@ -1164,6 +1193,9 @@ void yt_dlp::updateDownLoadCmdOptions( const engines::engine::baseEngine::update
 	s.ourOptions.append( "--output-na-placeholder" ) ;
 	s.ourOptions.append( "NA" ) ;
 
+	s.ourOptions.append( "-P" ) ;
+	s.ourOptions.append( m_downloadFolder ) ;
+
 	QStringList mm ;
 
 	auto _add = [ & ]( const QString& txt,const QString& original,const QString& New ){
@@ -1244,8 +1276,14 @@ void yt_dlp::updateCmdOptions( QStringList& e )
 	e.append( "\"NA\"" ) ;
 }
 
-yt_dlp::yt_dlplFilter::yt_dlplFilter( int processId,const engines::engine& engine,yt_dlp& p ) :
-	engines::engine::baseEngine::filter( engine,processId ),m_engine( engine ),m_parent( p )
+yt_dlp::yt_dlplFilter::yt_dlplFilter( int processId,
+				      const engines::engine& engine,
+				      yt_dlp& p,
+				      const QString& df ) :
+	engines::engine::baseEngine::filter( engine,processId ),
+	m_engine( engine ),
+	m_parent( p ),
+	m_downloadFolder( df.toUtf8() )
 {
 }
 
@@ -1406,20 +1444,24 @@ const QByteArray& yt_dlp::yt_dlplFilter::parseOutput( const Logger::Data::QByteA
 	return m_preProcessing.text() ;
 }
 
-void yt_dlp::yt_dlplFilter::setFileName( const QByteArray& fileName )
+void yt_dlp::yt_dlplFilter::setFileName( const QByteArray& fn )
 {
-	if( fileName.isEmpty() ){
+	if( !fn.isEmpty() ){
 
-		return ;
-	}
+		auto a = QDir::fromNativeSeparators( m_downloadFolder + "/" ) ;
 
-	for( const auto& it : m_fileNames ){
+		auto b = QDir::fromNativeSeparators( fn ) ;
 
-		if( it == fileName ){
+		auto fileName = b.replace( a,"" ).toUtf8() ;
 
-			return ;
+		for( const auto& it : m_fileNames ){
+
+			if( it == fileName ){
+
+				return ;
+			}
 		}
-	}
 
-	m_fileNames.emplace_back( fileName ) ;
+		m_fileNames.emplace_back( fileName ) ;
+	}
 }
