@@ -19,6 +19,8 @@
 
 #include "utility.h"
 
+#include "flatpak.h"
+
 #include "settings.h"
 #include "context.hpp"
 #include "downloadmanager.hpp"
@@ -323,38 +325,15 @@ std::vector< utility::PlayerOpts > utility::getMediaPlayers()
 		}
 		bool valid()
 		{
-			auto m = m_buffer.data() ;
-
-			if( m[ 0 ] == '\0' ){
+			if( m_buffer[ 0 ] == '\0' ){
 
 				return false ;
-			}
 
-			auto equal = [ & ]( const char * b ){
-
-				return std::strcmp( m,b ) == 0 ;
-			} ;
-
-			auto endsWith = [ & ]( const char * b,size_t len ){
-
-				auto a = static_cast< int >( m_size ) ;
-				auto l = static_cast< int >( len ) ;
-
-				if( a < l ){
-
-					return false ;
-				}else{
-					auto aa = static_cast< size_t >( m_size ) ;
-
-					return std::memcmp( m + aa - len,b,len ) == 0 ;
-				}
-			} ;
-
-			if( equal( ".mp4" ) || equal( ".MP4" ) ){
+			}else if( this->equal( ".mp4" ) || this->equal( ".MP4" ) ){
 
 				return false ;
 			}else{
-				return endsWith( ".mp4",4 ) || endsWith( ".MP4",4 ) ;
+				return this->endsWith( ".mp4" ) || this->endsWith( ".MP4" ) ;
 			}
 		}
 		operator char*()
@@ -370,6 +349,27 @@ std::vector< utility::PlayerOpts > utility::getMediaPlayers()
 			return m_buffer.data() ;
 		}
 	private:
+		bool equal( const char * b ) const
+		{
+			return std::strcmp( m_buffer.data(),b ) == 0 ;
+		}
+		bool endsWith( const utility::strl& m ) const
+		{
+			auto b   = m.data() ;
+			auto len = m.size() ;
+
+			auto a = static_cast< int >( m_size ) ;
+			auto l = static_cast< int >( len ) ;
+
+			if( a < l ){
+
+				return false ;
+			}else{
+				auto aa = static_cast< size_t >( m_size ) ;
+
+				return std::memcmp( m_buffer.data() + aa - len,b,len ) == 0 ;
+			}
+		} ;
 		std::array< char,4096 > m_buffer ;
 		DWORD m_size = 4096 ;
 	} ;
@@ -536,26 +536,31 @@ std::vector< utility::PlayerOpts > utility::getMediaPlayers()
 {
 	std::vector< utility::PlayerOpts > m ;
 
-	struct app
-	{
-		app( const char * u,const char * e ) : uiName( u ),exeName( e )
+	if( utility::platformisFlatPak() ){
+
+		m.emplace_back( "","Flatpak" ) ;
+	}else{
+		struct app
 		{
-		}
-		const char * uiName ;
-		const char * exeName ;
-	};
+			app( const char * u,const char * e ) : uiName( u ),exeName( e )
+			{
+			}
+			const char * uiName ;
+			const char * exeName ;
+		};
 
-	std::array< app,3 > apps = { { { "VLC","vlc" },
-				       { "SMPlayer","smplayer" },
-				       { "MPV","mpv" } } } ;
+		std::array< app,3 > apps = { { { "VLC","vlc" },
+					       { "SMPlayer","smplayer" },
+					       { "MPV","mpv" } } } ;
 
-	for( const auto& it : apps ){
+		for( const auto& it : apps ){
 
-		auto s = QStandardPaths::findExecutable( it.exeName ) ;
+			auto s = QStandardPaths::findExecutable( it.exeName ) ;
 
-		if( !s.isEmpty() ){
+			if( !s.isEmpty() ){
 
-			m.emplace_back( s,it.uiName ) ;
+				m.emplace_back( s,it.uiName ) ;
+			}
 		}
 	}
 
@@ -1050,17 +1055,24 @@ static QJsonArray _saveDownloadList( tableWidget& tableWidget,bool noFinishedSuc
 
 			if( title == url ){
 
-				obj.insert( "title","" ) ;
+				obj.remove( "title" ) ;
 			}
 		}
 
-		obj.insert( "runningState",e.runningState ) ;
+		if( !e.downloadingOptions.isEmpty() ){
 
-		obj.insert( "downloadOptions",e.downloadingOptions ) ;
+			obj.insert( "downloadOptions",e.downloadingOptions ) ;
+		}
 
-		obj.insert( "engineName",e.engineName ) ;
+		if( !e.engineName.isEmpty() ){
 
-		obj.insert( "downloadExtraOptions",e.extraDownloadingOptions ) ;
+			obj.insert( "engineName",e.engineName ) ;
+		}
+
+		if( !e.extraDownloadingOptions.isEmpty() ){
+
+			obj.insert( "downloadExtraOptions",e.extraDownloadingOptions ) ;
+		}
 
 		arr.append( obj ) ;
 	} ;
@@ -1156,9 +1168,7 @@ void utility::saveDownloadList( const Context& ctx,QMenu& m,tableWidget& tableWi
 			filePath = utility::homePath() + "/MediaDowloaderList.json" ;
 		}
 
-		auto s = QFileDialog::getSaveFileName( &ctx.mainWidget(),
-						       toolTip,
-						       filePath ) ;
+		auto s = QFileDialog::getSaveFileName( &ctx.mainWidget(),toolTip,filePath ) ;
 		if( !s.isEmpty() ){
 
 			const auto e = _saveDownloadList( tableWidget,false ) ;
@@ -1173,7 +1183,12 @@ void utility::saveDownloadList( const Context& ctx,QMenu& m,tableWidget& tableWi
 
 				for( const auto& it : e ){
 
-					m.append( it.toObject().value( "url" ).toString().toUtf8() + "\n" ) ;
+					auto obj = it.toObject() ;
+
+					auto title = obj.value( "title" ).toString().toUtf8() ;
+					auto url   = obj.value( "url" ).toString().toUtf8() ;
+
+					m.append( "#" + title + "\n" + url + "\n\n" ) ;
 				}
 
 				engines::file( s,ctx.logger() ).write( m ) ;
@@ -1251,6 +1266,7 @@ QJsonObject utility::MediaEntry::uiJson() const
 	obj.insert( "title",m_title ) ;
 	obj.insert( "url",m_url ) ;
 	obj.insert( "duration",d ) ;
+	obj.insert( "intDuration",m_intDuration ) ;
 	obj.insert( "upload_date",u ) ;
 	obj.insert( "uploader",m_uploader ) ;
 
@@ -2160,8 +2176,10 @@ bool utility::addData( const QByteArray& e )
 	}
 }
 
-void utility::contextMenuForDirectUrl( const QJsonArray& arr,const Context& ctx )
+void utility::contextMenuForDirectUrl( const QJsonObject& obj,const Context& ctx )
 {	
+	auto arr = obj.value( "urls" ).toArray() ;
+
 	QMenu m ;
 
 	auto mediaPlayer = ctx.Settings().openWith( ctx.logger() ) ;
@@ -2217,6 +2235,8 @@ void utility::contextMenuForDirectUrl( const QJsonArray& arr,const Context& ctx 
 
 		if( mediaPlayer.valid() ){
 
+			const auto& adp = ctx.Settings().appDataPath() ;
+
 			if( arr.size() == 1 ){
 
 				for( const auto& e : mediaPlayer.opts() ){
@@ -2225,9 +2245,9 @@ void utility::contextMenuForDirectUrl( const QJsonArray& arr,const Context& ctx 
 
 					auto ee = m.addAction( s ) ;
 
-					auto ac = mediaPlayer.ac( arr[ 0 ].toString(),e ) ;
+					auto ac = mediaPlayer.ac( arr[ 0 ].toString(),e,adp,obj ) ;
 
-					QObject::connect( ee,act,std::move( ac ) ) ;
+					QObject::connect( ee,act,ac.move() ) ;
 				}
 
 			}else{
@@ -2241,9 +2261,9 @@ void utility::contextMenuForDirectUrl( const QJsonArray& arr,const Context& ctx 
 
 						auto ee = m.addAction( s ) ;
 
-						auto ac = mediaPlayer.ac( arr[ i ].toString(),a ) ;
+						auto ac = mediaPlayer.ac( arr[ i ].toString(),a,adp,obj ) ;
 
-						QObject::connect( ee,act,std::move( ac ) ) ;
+						QObject::connect( ee,act,ac.move() ) ;
 					}
 				}
 			}
@@ -2289,4 +2309,18 @@ QString utility::OSXtranslationFilesPath()
 QString utility::OSX3rdPartyDirPath()
 {
 	return utility::OSXApplicationDirPath() + "/extra" ;
+}
+
+bool utility::platformisFlatPak()
+{
+#if FLATPAK
+	return true ;
+#else
+	return false ;
+#endif
+}
+
+quint64 utility::simpleRandomNumber()
+{
+	return static_cast< quint64 >( time( nullptr ) ) ;
 }

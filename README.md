@@ -24,9 +24,6 @@ downloads may cause the host to ban you.
 7. The GUI is offered in multiple languages and as of this writing, the supported languages are English, Chinese, Spanish, Polish,
 Turkish, Russian, Japanese, French, and Italian.
 
-## Donations
-Donations are very much appreciated, Please contact me using mhogomchungu _at__ gmail _dot__ com for further information.
-
 ## Extensions
 
 Media Downloader is a GUI front end to [yt-dlp](https://github.com/yt-dlp/yt-dlp), [gallery-dl](https://github.com/mikf/gallery-dl), [lux](https://github.com/iawia002/lux),
@@ -45,17 +42,17 @@ Make sure you have access to the internet before you run the media-downloader fo
 
 #### Bundle for MacOS
 
-Bundle for MacOS is  [here](https://github.com/mhogomchungu/media-downloader/releases/download/4.9.0/MediaDownloader-4.9.0.dmg). This bundle is not notarized and your system may report it as "corrupted". Search the internet on how to install bundles that are not notarized if you want to use this app on MacOS.
+Bundle for MacOS is  [here](https://github.com/mhogomchungu/media-downloader/releases/download/5.0.1/MediaDownloader-5.0.1.dmg). This bundle is not notarized and your system may report it as "corrupted". Search the internet on how to install bundles that are not notarized if you want to use this app on MacOS.
 
 #### Installer for Microsoft Windows
 
-Installer for Microsoft Windows is [here](https://github.com/mhogomchungu/media-downloader/releases/download/4.9.0/MediaDownloader-4.9.0.setup.exe).
+Installer for Microsoft Windows is [here](https://github.com/mhogomchungu/media-downloader/releases/download/5.0.1/MediaDownloader-5.0.1.setup.exe).
 
 #### Portable version for Microsoft Windows
 
 A portable version is a self-contained version that keeps everything in the application folder and does not need to be installed first.
 
-Portable version for Microsoft Windows is [here](https://github.com/mhogomchungu/media-downloader/releases/download/4.9.0/MediaDownloader-4.9.0.zip).
+Portable version for Microsoft Windows is [here](https://github.com/mhogomchungu/media-downloader/releases/download/5.0.1/MediaDownloader-5.0.1.zip).
 
 You can also install the portable version for Windows using scoop with the following commands:
 
@@ -69,6 +66,10 @@ scoop install media-downloader
 ```
 
 Git versions for windows and macos can be downloaded from [here](https://github.com/mhogomchungu/media-downloader-git/releases).
+
+#### Flatpak
+
+Media Downloader is on [flathub](https://flathub.org/apps/io.github.mhogomchungu.media-downloader) for those who prefer to use flatpaks.
 
 #### Aur package for Arch Linux
 Arch Linux users can build the project from source using [this](https://aur.archlinux.org/packages/media-downloader) aur package.

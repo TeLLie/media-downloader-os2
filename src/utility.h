@@ -66,6 +66,26 @@ namespace Ui
 
 namespace utility
 {
+	class strl
+	{
+	public:
+		strl() = delete ;
+		template< size_t N >
+		strl( const char ( &s )[ N ] ) : m_size( N - 1 ),m_string( s )
+		{
+		}
+		size_t size() const
+		{
+			return m_size ;
+		}
+		const char * data() const
+		{
+			return m_string ;
+		}
+	private:
+		size_t m_size ;
+		const char * m_string ;
+	} ;
 	template< typename T >
 	class vector
 	{
@@ -504,8 +524,9 @@ namespace utility
 	bool platformisOS2() ;
 	bool platformIsNOTWindows() ;
 	bool platformIsLikeWindows() ;
+	bool platformisFlatPak() ;
 	bool addData( const QByteArray& ) ;
-	void contextMenuForDirectUrl( const QJsonArray&,const Context& ) ;
+	void contextMenuForDirectUrl( const QJsonObject&,const Context& ) ;
 	void deleteTmpFiles( const QString&,std::vector< QByteArray > ) ;
 	QString OSXApplicationDirPath() ;
 	QString OSXtranslationFilesPath() ;
@@ -520,7 +541,7 @@ namespace utility
 	bool onlyWantedVersionInfo( const utility::cliArguments& ) ;
 	bool startedUpdatedVersion( settings&,const utility::cliArguments& ) ;
 	void hideUnhideEntries( QMenu&,tableWidget&,int,bool ) ;
-
+	quint64 simpleRandomNumber() ;
 	void addToListOptionsFromsDownload( QStringList& args,
 					    const QString& downLoadOptions,
 					    const Context& ctx,

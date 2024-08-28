@@ -73,6 +73,14 @@ private:
 	std::vector< directoryEntries::entry > m_files ;
 	std::vector< directoryEntries::wrapper > m_joined ;
 public:
+	template< typename Function >
+	void forEachFile( Function function )
+	{
+		for( const auto& it : m_files ){
+
+			function( it.path() ) ;
+		}
+	}
 	enum class ICON{ FILE,FOLDER } ;
 	directoryEntries move()
 	{
@@ -223,16 +231,13 @@ Q_DECLARE_METATYPE( directoryEntries::iter )
 
 namespace directoryManager
 {
-	bool supportsCancel() ;
-
-	directoryEntries readAll( const QString& ) ;
 	directoryEntries readAll( const QString&,std::atomic_bool& ) ;
 
+	directoryEntries readAll( const QString& ) ;
+
 	void removeDirectoryContents( const QString&,std::atomic_bool& ) ;
-	void removeDirectoryContents( const QString& ) ;
 
 	void removeDirectory( const QString&,std::atomic_bool& ) ;
-	void removeDirectory( const QString& ) ;
 }
 
 #endif

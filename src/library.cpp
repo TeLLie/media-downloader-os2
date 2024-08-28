@@ -36,8 +36,8 @@ library::library( const Context& ctx ) :
 	m_table( *m_ui.tableWidgetLibrary,m_ctx.mainWidget().font() ),
 	m_downloadFolder( QDir::fromNativeSeparators( m_settings.downloadFolder() ) ),
 	m_currentPath( m_downloadFolder ),
-	m_folderIcon( QIcon( ":/folder" ).pixmap( 30,40 ) ),
-	m_videoIcon( QIcon( ":/video" ).pixmap( 30,40 ) )
+	m_folderIcon( m_settings.getIcon( "folder" ).pixmap( 30,40 ) ),
+	m_videoIcon( m_settings.getIcon( "video" ).pixmap( 30,40 ) )
 {
 	qRegisterMetaType< directoryEntries::iter >() ;
 
@@ -326,9 +326,7 @@ void library::cxMenuRequested( QPoint )
 
 			this->internalDisableAll() ;
 
-			auto s = directoryManager::supportsCancel() ;
-
-			m_ui.pbLibraryCancel->setEnabled( s ) ;
+			m_ui.pbLibraryCancel->setEnabled( true ) ;
 
 			utils::qthread::run( [ this,m ](){
 
@@ -365,7 +363,7 @@ void library::cxMenuRequested( QPoint )
 
 		this->internalDisableAll() ;
 
-		m_ui.pbLibraryCancel->setEnabled( directoryManager::supportsCancel() ) ;
+		m_ui.pbLibraryCancel->setEnabled( true ) ;
 
 		utils::qthread::run( [ this ](){
 
@@ -401,7 +399,7 @@ void library::arrangeAndShow()
 		}
 	}
 
-	m_ui.pbLibraryCancel->setEnabled( directoryManager::supportsCancel() ) ;
+	m_ui.pbLibraryCancel->setEnabled( true ) ;
 
 	m_table.clear() ;
 
@@ -464,8 +462,6 @@ void library::arrangeEntries( int )
 
 		this->internalDisableAll() ;
 
-		m_continue = true ;
-
 		this->arrangeAndShow() ;
 	} ) ;
 
@@ -481,7 +477,7 @@ void library::showContents( const QString& path,bool disableUi )
 		this->internalDisableAll() ;
 	}
 
-	m_ui.pbLibraryCancel->setEnabled( directoryManager::supportsCancel() ) ;
+	m_ui.pbLibraryCancel->setEnabled( true ) ;
 
 	utils::qthread::run( [ path,this ](){
 
