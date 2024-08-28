@@ -5,7 +5,7 @@
 ****                All the money you send will go to the QT5 project                          ****
 ===================================================================================================
 
-Media-downloader v4.9.0   
+Media-downloader v5.0.1   
 
  CONTENTS OF THIS FILE
  =====================
@@ -32,7 +32,7 @@ Media-downloader v4.9.0
 1. INTRODUCTION
 ===============
 
-Welcome to media-downloader v4.9.0 port for OS/2 and Arcanoae.
+Welcome to media-downloader v5.0.1 port for OS/2 and Arcanoae.
 
 This project is a Qt/C++ based GUI frontend to CLI multiple CLI-based tools that deal with downloading online media.11
 
@@ -131,6 +131,19 @@ development, you can do so in one of the following ways:
 8. HISTORY
 ==========
 Compiled now with Qt v5.15.2
+
+     Version 5.0.0(August 16th, 2024)
+         [Linux]
+         - Add support for flatpak and a flatpak package is hosted at
+           flathub(https://flathub.org/apps/io.github.mhogomchungu.media-downloader).
+         [All]
+         - Various bug fixes and improvements.
+
+     Version 5.0.1(August 20th, 2024)
+         [All]
+         - Use blue icons when a dark theme is in use.
+         [Flatpak]
+         - Use ~/Downloads folder as default download folder.
 
 How to install:
 
